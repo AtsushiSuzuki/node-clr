@@ -1,7 +1,11 @@
 {
-  "name": "node-clr",
+  "name": "clr",
   "version": "0.0.1",
   "description": "Node.js binding for .NET Framework API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AtsushiSuzuki/node-clr"
+  },
   "main": "lib/clr",
   "scripts": {
     "test": "nodeunit test/test.js",
