@@ -1,0 +1,20 @@
+{
+  "name": "node-clr",
+  "version": "0.0.1",
+  "description": "Node.js binding for .NET Framework API",
+  "main": "lib/clr",
+  "scripts": {
+    "test": "nodeunit test/test.js",
+    "install": "node-gyp rebuild"
+  },
+  "dependencies": {
+    "underscore": "*"
+  },
+  "devDependencies": {
+    "nodeunit": "*"
+  },
+  "keywords": [".NET", "CLR", "Common Language Runtime", "API Bridge"],
+  "author": "Atsushi Suzuki",
+  "license": ["BSD", "WTFPLv2"],
+  "gypfile": true
+}
