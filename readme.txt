@@ -10,6 +10,12 @@ example:
   > now.ToString();
   '2013/07/01 0:00:00'
 
+prerequisites:
+  This package is developed and tested on:
+    node.js v0.10.12
+    .NET Framework 4.5
+    Visual Studio 2012
+
 usage:
   clr([assemblyNames]) : Namespace
     initialize CLR runtime with given assemblies and returns global namespace
