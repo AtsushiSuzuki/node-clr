@@ -14,7 +14,12 @@ Local<Object> CLRObject::Wrap(System::Object^ wrapped)
 
 	auto obj = new CLRObject(wrapped);
 	obj->node::ObjectWrap::Wrap(wrapper);
-	wrapper->Set(String::NewSymbol("__clr_type__"), V8String((wrapped != nullptr) ? wrapped->GetType()->FullName : System::Object::typeid->FullName), (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
+	wrapper->Set(
+		String::NewSymbol("__clr_type__"),
+		V8String((wrapped != nullptr)
+			? wrapped->GetType()->AssemblyQualifiedName
+			: System::Object::typeid->AssemblyQualifiedName),
+		(PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 
 	return scope.Close(wrapper);
 }
@@ -55,7 +60,7 @@ Handle<Value> CLRObject::CreateConstructor(const Arguments& args)
 
 	auto tpl = FunctionTemplate::New(New);
 	tpl->SetClassName(V8String(type->Name));
-	tpl->Set(String::NewSymbol("__clr_type__"), V8String(type->FullName), (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
+	tpl->Set(String::NewSymbol("__clr_type__"), V8String(type->AssemblyQualifiedName), (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 	tpl->Set(String::NewSymbol("__initializer__"), args[1], (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
@@ -100,7 +105,12 @@ Handle<Value> CLRObject::New(const Arguments& args)
 
 	auto obj = new CLRObject(wrapped);
 	obj->node::ObjectWrap::Wrap(args.This());
-	args.This()->Set(String::NewSymbol("__clr_type__"), V8String((wrapped != nullptr) ? wrapped->GetType()->FullName : System::Object::typeid->FullName), (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
+	args.This()->Set(
+		String::NewSymbol("__clr_type__"),
+		V8String((wrapped != nullptr)
+			? wrapped->GetType()->AssemblyQualifiedName
+			: System::Object::typeid->AssemblyQualifiedName),
+		(PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 
 	std::vector<Handle<Value> > params;
 	for (int i = 0; i < args.Length(); i++)

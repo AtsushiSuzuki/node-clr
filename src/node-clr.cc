@@ -2,6 +2,7 @@
 
 using namespace v8;
 using namespace System::Collections::Generic;
+using namespace System::IO;
 using namespace System::Linq;
 using namespace System::Reflection;
 
@@ -15,13 +16,28 @@ static Handle<Value> Import(const Arguments &args)
 		return scope.Close(Undefined());
 	}
 
+	auto name = CLRString(args[0]);
+	Assembly^ assembly;
 	try
 	{
-		System::Reflection::Assembly::LoadWithPartialName(CLRString(args[0]));
+		if (File::Exists(name))
+		{
+			assembly = Assembly::LoadFrom(name);
+		}
+		else
+		{
+			assembly = Assembly::LoadWithPartialName(name);
+		}
 	}
 	catch (System::Exception ^ex)
 	{
 		ThrowException(V8Exception(ex));
+		return scope.Close(Undefined());
+	}
+
+	if (assembly == nullptr)
+	{
+		ThrowException(Exception::Error(String::New("Assembly not found")));
 		return scope.Close(Undefined());
 	}
 
@@ -89,7 +105,7 @@ static Handle<Value> GetTypes(const Arguments& args)
 				continue;
 			}
 
-			arr->Set(Number::New(index++), V8String(type->FullName));
+			arr->Set(Number::New(index++), V8String(type->AssemblyQualifiedName));
 		}
 	}
 

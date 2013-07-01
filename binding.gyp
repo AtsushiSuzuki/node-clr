@@ -3,7 +3,7 @@
     {
       "target_name": "clr",
       "sources": [
-		"readme.txt",
+		"readme.md",
 		"lib/clr.js",
 		"src/node-clr.h",
 		"src/node-clr.cc",
