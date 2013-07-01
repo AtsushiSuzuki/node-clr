@@ -71,3 +71,12 @@ This package is developed and tested on:
 - System.SByte, System.Byte, System.Int16, System.UInt16, System.Int32, System.UInt32, System.Int64, System.UInt64, System.Single, System.Double, System.Decimal => number
 - System.String => string
 - System.Object => wrapped object
+
+## TODO:
+- V8 type-aware custom binder
+- function => delegate binding, with thread synchronization
+- events
+- generics
+- array
+- smarter marshaling
+- read and study Edge and DLR sources
