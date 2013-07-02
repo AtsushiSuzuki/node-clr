@@ -26,7 +26,10 @@ static Handle<Value> Import(const Arguments &args)
 		}
 		else
 		{
+#pragma warning(push)
+#pragma warning(disable:4947)
 			assembly = Assembly::LoadWithPartialName(name);
+#pragma warning(pop)
 		}
 	}
 	catch (System::Exception ^ex)
@@ -187,7 +190,7 @@ static Handle<Value> GetMembers(const Arguments& args, MemberTypes types)
 	return scope.Close(arr);
 }
 
-static Handle<Value> InvokeMember(const Arguments &args, BindingFlags flags)
+static Handle<Value> InvokeMember(const Arguments &args, BindingFlags attr)
 {
 	HandleScope scope;
 
@@ -200,39 +203,15 @@ static Handle<Value> InvokeMember(const Arguments &args, BindingFlags flags)
 		ThrowException(Exception::TypeError(String::New("Argument error")));
 		return scope.Close(Undefined());
 	}
-	
-	auto isStatic = !args[1]->BooleanValue();
-	System::Type^ type;
-	try
-	{
-		type = System::Type::GetType(CLRString(args[0]));
-	}
-	catch (System::Exception^ ex)
-	{
-		ThrowException(V8Exception(ex));
-		return scope.Close(Undefined());
-	}
-	auto instance = (CLRObject::IsWrapped(args[1])) ? CLRObject::Unwrap(args[1]) : nullptr;
-	auto methodName = args[2];
-	auto arguments = args[3];
 
-	System::Object^ result;
-	try
-	{
-		result = type->InvokeMember(
-			CLRString(methodName),
-			((isStatic) ? BindingFlags::Static : BindingFlags::Instance) | BindingFlags::Public | flags | BindingFlags::OptionalParamBinding,
-			nullptr,
-			instance,
-			CLRArguments(Local<Array>::Cast(arguments)));
-	}
-	catch (System::Exception^ ex)
-	{
-		ThrowException(V8Exception(ex));
-		return scope.Close(Undefined());
-	}
+	auto result = V8Binder::InvokeMember(
+		Handle<String>::Cast(args[0]),
+		Handle<String>::Cast(args[2]),
+		attr,
+		args[1],
+		Handle<Array>::Cast(args[3]));
 
-	return scope.Close(V8Value(result));
+	return scope.Close(result);
 }
 
 static Handle<Value> GetMethods(const Arguments &args)
@@ -240,7 +219,7 @@ static Handle<Value> GetMethods(const Arguments &args)
 	return GetMembers(args, MemberTypes::Method);
 }
 
-static Handle<Value> InvokeMethod(const Arguments& args)
+static Handle<Value> InvokeMethod(const Arguments &args)
 {
 	return InvokeMember(args, BindingFlags::InvokeMethod);
 }
