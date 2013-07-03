@@ -80,3 +80,5 @@ This package is developed and tested on:
 - array
 - smarter marshaling
 - read and study Edge and DLR sources
+- cast
+- using
