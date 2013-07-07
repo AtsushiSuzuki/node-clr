@@ -3,127 +3,107 @@
 using namespace v8;
 
 
-Local<Object> CLRObject::Wrap(System::Object^ wrapped)
+Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 {
-	using namespace v8;
-	HandleScope scope;
-
-	auto tpl = ObjectTemplate::New();
-	tpl->SetInternalFieldCount(1);
-	auto wrapper = tpl->NewInstance();
-
-	auto obj = new CLRObject(wrapped);
-	obj->node::ObjectWrap::Wrap(wrapper);
-	wrapper->Set(
-		String::NewSymbol("__clr_type__"),
-		V8String((wrapped != nullptr)
-			? wrapped->GetType()->AssemblyQualifiedName
-			: System::Object::typeid->AssemblyQualifiedName),
+	auto wrapper = new CLRObject(value);
+	wrapper->node::ObjectWrap::Wrap(obj);
+	
+	obj->Set(
+		String::NewSymbol("_clrType"),
+		(value != nullptr)
+			? ToV8String(value->GetType()->AssemblyQualifiedName)
+			: ToV8String(System::Object::typeid->AssemblyQualifiedName),
 		(PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 
-	return scope.Close(wrapper);
+	return obj;
 }
 
-bool CLRObject::IsWrapped(Handle<Value> wrapper)
+Handle<Object> CLRObject::Wrap(System::Object^ value)
 {
-	using namespace v8;
+	auto tpl = ObjectTemplate::New();
+	tpl->SetInternalFieldCount(1);
 
-	return wrapper->IsObject() &&
-		Handle<Object>::Cast(wrapper)->Has(String::NewSymbol("__clr_type__"));
+	auto obj = tpl->NewInstance();
+	return Wrap(obj, value);
 }
 
-System::Object^ CLRObject::Unwrap(Handle<Value> wrapper)
+bool CLRObject::IsWrapped(Handle<Value> obj)
 {
-	using namespace v8;
-
-	assert(IsWrapped(wrapper));
-	auto obj = node::ObjectWrap::Unwrap<CLRObject>(Handle<Object>::Cast(wrapper));
-	return obj->wrapped;
+	return obj->IsObject() &&
+		obj->ToObject()->Has(String::NewSymbol("_clrType"));
 }
 
-Handle<Value> CLRObject::CreateConstructor(const Arguments& args)
+System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 {
-	using namespace v8;
-	HandleScope scope;
-
-	if (args.Length() != 2 || !args[0]->IsString() || !args[1]->IsFunction())
+	if (!IsWrapped(obj))
 	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
-		return scope.Close(Undefined());
+		throw gcnew System::ArgumentException("argument \"obj\" is not CLR-wrapped object");
 	}
-	auto type = System::Type::GetType(CLRString(args[0]));
+
+	auto wrapper = node::ObjectWrap::Unwrap<CLRObject>(obj->ToObject());
+	return wrapper->value;
+}
+
+Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Function> initializer)
+{
+	auto type = System::Type::GetType(ToCLRString(typeName));
 	if (type == nullptr)
 	{
-		ThrowException(Exception::TypeError(String::New("No such CLR type")));
-		return scope.Close(Undefined());
+		System::Console::WriteLine("{0}, {1}", ToCLRString(typeName), type);
+		throw gcnew System::ArgumentException("Type not found");
 	}
 
-	auto tpl = FunctionTemplate::New(New);
-	tpl->SetClassName(V8String(type->Name));
-	tpl->Set(String::NewSymbol("__clr_type__"), V8String(type->AssemblyQualifiedName), (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
-	tpl->Set(String::NewSymbol("__initializer__"), args[1], (PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
+	auto data = Object::New();
+	data->Set(String::NewSymbol("type"), ToV8String(type->AssemblyQualifiedName));
+	data->Set(String::NewSymbol("initializer"), initializer);
+
+	auto tpl = FunctionTemplate::New(New, data);
+	tpl->SetClassName(ToV8String(type->Name));
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-	return scope.Close(tpl->GetFunction());
+	return tpl->GetFunction();
 }
 
 Handle<Value> CLRObject::New(const Arguments& args)
 {
-	using namespace v8;
 	HandleScope scope;
 
-	auto fullName = args.Callee()->Get(String::NewSymbol("__clr_type__"));
-	if (!fullName->IsString())
+	if (!args.IsConstructCall())
 	{
-		ThrowException(Exception::TypeError(String::New("Internal Error: Illegal invocation")));
-		return scope.Close(Undefined());
-	}
-	auto initializer = args.Callee()->Get(String::NewSymbol("__initializer__"));
-	if (!initializer->IsFunction())
-	{
-		ThrowException(Exception::TypeError(String::New("Internal Error: Illegal invocation")));
-		return scope.Close(Undefined());
-	}
-		
-	auto type = System::Type::GetType(CLRString(fullName));
-	if (type == nullptr)
-	{
-		ThrowException(Exception::TypeError(String::New("Internal Error: No such CLR type")));
+		ThrowException(Exception::Error(String::New("Illegal invocation")));
 		return scope.Close(Undefined());
 	}
 
-	System::Object^ wrapped;
+	auto typeName = args.Data()->ToObject()->Get(String::NewSymbol("type"));
+	System::Object^ value;
 	try
 	{
-		wrapped = System::Activator::CreateInstance(type, CLRArguments(args));
+		value = CLRBinder::InvokeConstructor(typeName, args);
 	}
 	catch (System::Exception^ ex)
 	{
-		ThrowException(V8Exception(ex));
+		ThrowException(ToV8Exception(ex));
 		return scope.Close(Undefined());
 	}
+	
+	Wrap(args.This(), value);
 
-	auto obj = new CLRObject(wrapped);
-	obj->node::ObjectWrap::Wrap(args.This());
-	args.This()->Set(
-		String::NewSymbol("__clr_type__"),
-		V8String((wrapped != nullptr)
-			? wrapped->GetType()->AssemblyQualifiedName
-			: System::Object::typeid->AssemblyQualifiedName),
-		(PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
-
-	std::vector<Handle<Value> > params;
-	for (int i = 0; i < args.Length(); i++)
+	auto initializer = args.Data()->ToObject()->Get(String::NewSymbol("initializer"));
+	if (!initializer.IsEmpty())
 	{
-		params.push_back(args[i]);
+		std::vector<Handle<Value> > params;
+		for (int i = 0; i < args.Length(); i++)
+		{
+			params.push_back(args[i]);
+		}
+		Local<Function>::Cast(initializer)->Call(args.This(), args.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
 	}
-	Local<Function>::Cast(initializer)->Call(args.This(), args.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
 
 	return scope.Close(Undefined());
 }
 
-CLRObject::CLRObject(System::Object^ wrapped)
-	: wrapped(wrapped)
+CLRObject::CLRObject(System::Object^ value)
+	: value(value)
 {
 }
 

@@ -1,269 +1,440 @@
 #include "node-clr.h"
 
 using namespace v8;
-using namespace System::Collections::Generic;
 using namespace System::IO;
-using namespace System::Linq;
 using namespace System::Reflection;
 
-static Handle<Value> Import(const Arguments &args)
+/*
+ * main module
+ */
+class CLR
 {
-	HandleScope scope;
-
-	if (args.Length() != 1 || !args[0]->IsString())
+	// clr.import(assemblyName | assemblyPath)
+	//   load specified assembly into current process.
+	//   - assemblyName: partial name of assembly, ie) "System.Data"
+	//   - assemblyPath: .NET EXE/DLL file path relative from cwd
+	static Handle<Value> Import(const Arguments& args)
 	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
-		return scope.Close(Undefined());
-	}
+		HandleScope scope;
 
-	auto name = CLRString(args[0]);
-	Assembly^ assembly;
-	try
-	{
-		if (File::Exists(name))
+		if (args.Length() != 1 || !args[0]->IsString())
 		{
-			assembly = Assembly::LoadFrom(name);
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
 		}
-		else
+
+		auto name = ToCLRString(args[0]);
+		Assembly^ assembly;
+		try
 		{
+			if (File::Exists(name))
+			{
+				assembly = Assembly::LoadFrom(name);
+			}
+			else
+			{
 #pragma warning(push)
 #pragma warning(disable:4947)
-			assembly = Assembly::LoadWithPartialName(name);
+				assembly = Assembly::LoadWithPartialName(name);
 #pragma warning(pop)
-		}
-	}
-	catch (System::Exception ^ex)
-	{
-		ThrowException(V8Exception(ex));
-		return scope.Close(Undefined());
-	}
-
-	if (assembly == nullptr)
-	{
-		ThrowException(Exception::Error(String::New("Assembly not found")));
-		return scope.Close(Undefined());
-	}
-
-	return scope.Close(Undefined());
-}
-
-static Handle<Value> GetAssemblies(const Arguments& args)
-{
-	HandleScope scope;
-
-	if (args.Length() != 0)
-	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
-		return scope.Close(Undefined());
-	}
-
-	auto arr = Array::New();
-	auto index = 0;
-	auto assemblies = System::AppDomain::CurrentDomain->GetAssemblies();
-	for (int i = 0; i < assemblies->Length; i++)
-	{
-		auto assembly = assemblies[i];
-		if (assembly == System::Reflection::Assembly::GetExecutingAssembly())
-		{
-			continue;
-		}
-
-		arr->Set(Number::New(index++), V8String(assembly->FullName));
-	}
-
-	return scope.Close(arr);
-}
-
-static Handle<Value> GetTypes(const Arguments& args)
-{
-	HandleScope scope;
-
-	if (args.Length() != 0)
-	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
-		return scope.Close(Undefined());
-	}
-
-	auto arr = Array::New();
-	auto index = 0;
-	auto assemblies = System::AppDomain::CurrentDomain->GetAssemblies();
-	for (int i = 0; i < assemblies->Length; i++)
-	{
-		auto assembly = assemblies[i];
-		if (assembly == System::Reflection::Assembly::GetExecutingAssembly())
-		{
-			continue;
-		}
-
-		auto types = assembly->GetTypes();
-		for (int j = 0; j < types->Length; j++)
-		{
-			auto type = types[j];
-			if (!type->IsPublic)
-			{
-				continue;
 			}
-			if (type->IsSpecialName)
-			{
-				continue;
-			}
-
-			arr->Set(Number::New(index++), V8String(type->AssemblyQualifiedName));
 		}
-	}
+		catch (System::Exception^ ex)
+		{
+			ThrowException(ToV8Exception(ex));
+			return scope.Close(Undefined());
+		}
 
-	return scope.Close(arr);
-}
+		if (assembly == nullptr)
+		{
+			ThrowException(Exception::Error(String::New("Assembly not found")));
+			return scope.Close(Undefined());
+		}
 
-static Handle<Value> CreateConstructor(const Arguments &args)
-{
-	return CLRObject::CreateConstructor(args);
-}
-
-static Handle<Value> GetMembers(const Arguments& args, MemberTypes types)
-{
-	HandleScope scope;
-
-	if (args.Length() != 2 || !args[0]->IsString())
-	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
 		return scope.Close(Undefined());
 	}
 	
-	auto isStatic = !args[1]->BooleanValue();
-	System::Type^ type;
-	try
-	{
-		type = System::Type::GetType(CLRString(args[0]));
-	}
-	catch (System::Exception^ ex)
-	{
-		ThrowException(V8Exception(ex));
-		return scope.Close(Undefined());
-	}
 
-	auto members = type->GetMembers(
-		((isStatic) ? BindingFlags::Static : BindingFlags::Instance) |
-		BindingFlags::Public |
-		BindingFlags::FlattenHierarchy);
-	auto names = gcnew List<System::String^>();
-	for (int i = 0; i < members->Length; i++)
+	// clr.getAssemblies() : assemblyNames
+	//   lists all assembly names in current process
+	//   - assemblyNames: array of assembly name string
+	static Handle<Value> GetAssemblies(const Arguments& args)
 	{
-		auto member = members[i];
+		HandleScope scope;
 
-		if ((int)(member->MemberType & types) == 0)
+		if (args.Length() != 0)
 		{
-			continue;
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
 		}
+
+		auto arr = Array::New();
+		auto index = 0;
+		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
+		{
+			if (assembly == Assembly::GetExecutingAssembly())
+			{
+				continue;
+			}
+
+			arr->Set(Number::New(index++), ToV8String(assembly->FullName));
+		}
+
+		return scope.Close(arr);
+	}
+	
+
+	// clr.getTypes() : typeNames
+	//   lists all non-nested type name (Assembly-Qualified-Name) in current process
+	//   - typeNames: array of type name string
+	static Handle<Value> GetTypes(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (args.Length() != 0)
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		auto arr = Array::New();
+		auto index = 0;
+		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
+		{
+			if (assembly == System::Reflection::Assembly::GetExecutingAssembly())
+			{
+				continue;
+			}
+
+			for each (auto type in assembly->GetTypes())
+			{
+				if (!type->IsPublic)
+				{
+					continue;
+				}
+				if (type->IsSpecialName)
+				{
+					continue;
+				}
+
+				arr->Set(Number::New(index++), ToV8String(type->AssemblyQualifiedName));
+			}
+		}
+
+		return scope.Close(arr);
+	}
+	
+
+	// clr.createConstructor(typeName, initializer) : constructor
+	//   create new constructor function from given typeName,
+	//   - typeName: type name of constructor
+	//   - initializer: an function which is invoked in constructor function
+	//   - constructor: an constructor function to invoke CLR type constructor, returning CLR wrapped function
+	static Handle<Value> CreateConstructor(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if ((args.Length() != 1 && args.Length() != 2) ||
+			!args[0]->IsString() ||
+			!args[1]->IsFunction())
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		Handle<Value> result;
+		try
+		{
+			result = CLRObject::CreateConstructor(
+				Handle<String>::Cast(args[0]),
+				Handle<Function>::Cast(args[1]));
+		}
+		catch (System::Exception^ ex)
+		{
+			ThrowException(ToV8Exception(ex));
+			return scope.Close(Undefined());
+		}
+
+		return scope.Close(result);
+	}
+	
+
+	// clr.getMembers(typeName, CLRObject) : members
+	//   list up type's static or instance members
+	//   - typeName: type name string
+	//   - CLRObject: CLR object instance or null
+	//   - members: array of object that contains member information
+	//   - members[i].memberType: 'event' | 'field' | 'method' | 'property' | 'nestedType'
+	//   - members[i].name: member name
+	//   - members[i].accessibility: array of string which denotes member's accessibility, 'get' | 'set'
+	//   - members[i].fullName: CLR type's full name for nestedType
+	static Handle<Value> GetMembers(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (args.Length() != 2 ||
+			!args[0]->IsString())
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		auto type = System::Type::GetType(ToCLRString(args[0]));
+		if (type == nullptr)
+		{
+			ThrowException(Exception::Error(String::New("Type not found")));
+			return scope.Close(Undefined());
+		}
+
+		auto isStatic = !args[1]->BooleanValue();
 		
-		auto ei = dynamic_cast<EventInfo^>(member);
-		if (ei != nullptr && ei->IsSpecialName)
+		auto obj = Object::New();
+		auto members = type->GetMembers(
+			BindingFlags::Public |
+			((isStatic) ? BindingFlags::Static : BindingFlags::Instance));
+		for each (auto member in members)
 		{
-			continue;
-		}
-		auto fi = dynamic_cast<FieldInfo^>(member);
-		if (fi != nullptr && fi->IsSpecialName)
-		{
-			continue;
-		}
-		auto mi = dynamic_cast<MethodBase^>(member);
-		if (mi != nullptr && mi->IsSpecialName)
-		{
-			continue;
-		}
-		auto pi = dynamic_cast<PropertyInfo^>(member);
-		if (pi != nullptr && pi->IsSpecialName)
-		{
-			continue;
+			auto ei = dynamic_cast<EventInfo^>(member);
+			if (ei != nullptr &&
+				!ei->IsSpecialName &&
+				!obj->Has(ToV8Symbol(member->Name)))
+			{
+				auto desc = Object::New();
+				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
+				desc->Set(String::NewSymbol("type"), String::New("event"));
+				obj->Set(ToV8Symbol(member->Name), desc);
+			}
+
+			auto fi = dynamic_cast<FieldInfo^>(member);
+			if (fi != nullptr &&
+				!fi->IsSpecialName &&
+				!obj->Has(ToV8Symbol(member->Name)))
+			{
+				auto desc = Object::New();
+				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
+				desc->Set(String::NewSymbol("type"), String::New("field"));
+				auto access = Array::New();
+				int index = 0;
+				access->Set(Number::New(index++), String::New("get"));
+				if (!fi->IsInitOnly)
+				{
+					access->Set(Number::New(index++), String::New("set"));
+				}
+				desc->Set(String::NewSymbol("access"), access);
+				obj->Set(ToV8Symbol(member->Name), desc);
+			}
+
+			auto mi = dynamic_cast<MethodInfo^>(member);
+			if (mi != nullptr &&
+				!mi->IsSpecialName &&
+				!obj->Has(ToV8Symbol(member->Name)))
+			{
+				auto desc = Object::New();
+				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
+				desc->Set(String::NewSymbol("type"), String::New("method"));
+				obj->Set(ToV8Symbol(member->Name), desc);
+			}
+
+			auto pi = dynamic_cast<PropertyInfo^>(member);
+			if (pi != nullptr &&
+				!pi->IsSpecialName)
+			{
+				auto desc = (obj->Has(ToV8Symbol(member->Name)))
+					? Local<Object>::Cast(obj->Get(ToV8Symbol(member->Name)))
+					: Object::New();
+				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
+				desc->Set(String::NewSymbol("type"), String::New("property"));
+				
+				auto access = (obj->Has(String::NewSymbol("access")))
+					? Local<Array>::Cast(obj->Get(String::NewSymbol("access")))
+					: Array::New();
+				auto canGet = pi->CanRead;
+				auto canSet = pi->CanWrite;
+				for (int i = 0; i < access->Length(); i++)
+				{
+					if (access->Get(Number::New(i))->StrictEquals(String::New("get")))
+					{
+						canGet = true;
+					}
+					if (access->Get(Number::New(i))->StrictEquals(String::New("set")))
+					{
+						canSet = true;
+					}
+				}
+				int index = 0;
+				if (canGet)
+				{
+					access->Set(Number::New(index++), String::New("get"));
+				}
+				if (canSet)
+				{
+					access->Set(Number::New(index++), String::New("set"));
+				}
+				desc->Set(String::NewSymbol("access"), access);
+				
+				obj->Set(ToV8Symbol(member->Name), desc);
+			}
+
+			auto ti = dynamic_cast<System::Type^>(member);
+			if (ti != nullptr &&
+				!ti->IsSpecialName &&
+				!obj->Has(ToV8Symbol(member->Name)))
+			{
+				auto desc = Object::New();
+				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
+				desc->Set(String::NewSymbol("type"), String::New("nestedType"));
+				desc->Set(String::NewSymbol("fullName"), ToV8String(ti->AssemblyQualifiedName));
+				obj->Set(ToV8Symbol(member->Name), desc);
+			}
 		}
 
-		names->Add(member->Name);
+		return scope.Close(obj);
 	}
-	names = Enumerable::ToList(Enumerable::Distinct(names));
 
-	auto arr = Array::New();
-	for (int i = 0; i < names->Count; i++)
+	
+	// clr.invokeMethod(typeName, methodName, CLRObject, arguments) : returnValue
+	//   invoke static or instance method
+	//   - typeName: type name string, for static members
+	//   - methodName: method name
+	//   - CLRObject: CLR object instance, for instance members
+	//   - arguments: array of method arguments
+	//   - returnValue: return value of method, v8 primitive or CLR wrapped object
+	static Handle<Value> InvokeMethod(const Arguments& args)
 	{
-		arr->Set(Number::New(i), V8String(names[i]));
+		HandleScope scope;
+
+		if (args.Length() != 4 ||
+			!args[0]->IsString() ||
+			!args[1]->IsString() ||
+			(!CLRObject::IsWrapped(args[2]) && args[2]->BooleanValue() != false) ||
+			!args[3]->IsArray())
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		Handle<Value> result;
+		try
+		{
+			result = CLRBinder::InvokeMethod(
+				args[0],
+				args[1],
+				args[2],
+				args[3]);
+		}
+		catch (System::Exception^ ex)
+		{
+			ThrowException(ToV8Exception(ex));
+			return scope.Close(Undefined());
+		}
+
+		return scope.Close(result);
 	}
+	
 
-	return scope.Close(arr);
-}
-
-static Handle<Value> InvokeMember(const Arguments &args, BindingFlags attr)
-{
-	HandleScope scope;
-
-	if (args.Length() != 4 ||
-		!args[0]->IsString() ||
-		(!CLRObject::IsWrapped(args[1]) && !args[1]->IsNull()) ||
-		!args[2]->IsString() ||
-		!args[3]->IsArray())
+	// clr.getField(typeName, fieldName, CLRObject) : returnValue
+	//   invoke field getter
+	//   - typeName: type name string, for static members
+	//   - fieldName: field name
+	//   - CLRObject: CLR object instance, for instance members
+	//   - returnValue: field value, v8 primitive or CLR wrapped object
+	static Handle<Value> GetField(const Arguments& args)
 	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
+		HandleScope scope;
+
+		if (args.Length() != 3 ||
+			!args[0]->IsString() ||
+			!args[1]->IsString() ||
+			(!CLRObject::IsWrapped(args[2]) && args[2]->BooleanValue() != false))
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		Handle<Value> result;
+		try
+		{
+			result = CLRBinder::GetField(
+				args[0],
+				args[1],
+				args[2]);
+		}
+		catch (System::Exception^ ex)
+		{
+			ThrowException(ToV8Exception(ex));
+			return scope.Close(Undefined());
+		}
+
+		return scope.Close(result);
+	}
+	
+
+	// clr.setField(typeName | CLRObject, fieldName, value)
+	//   invoke field setter
+	//   - typeName: type name string, for static members
+	//   - CLRObject: CLR object instance, for instance members
+	//   - fieldName: field name
+	//   - value: field value, v8 primitive or CLR wrapped object
+	static Handle<Value> SetField(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (args.Length() != 4 ||
+			!args[0]->IsString() ||
+			!args[1]->IsString() ||
+			(!CLRObject::IsWrapped(args[2]) && args[2]->BooleanValue() != false) ||
+			!args[3].IsEmpty())
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		try
+		{
+			CLRBinder::SetField(
+				args[0],
+				args[1],
+				args[2],
+				args[3]);
+		}
+		catch (System::Exception^ ex)
+		{
+			ThrowException(ToV8Exception(ex));
+			return scope.Close(Undefined());
+		}
+
 		return scope.Close(Undefined());
 	}
+	
 
-	auto result = V8Binder::InvokeMember(
-		Handle<String>::Cast(args[0]),
-		Handle<String>::Cast(args[2]),
-		attr,
-		args[1],
-		Handle<Array>::Cast(args[3]));
-
-	return scope.Close(result);
-}
-
-static Handle<Value> GetMethods(const Arguments &args)
-{
-	return GetMembers(args, MemberTypes::Method);
-}
-
-static Handle<Value> InvokeMethod(const Arguments &args)
-{
-	return InvokeMember(args, BindingFlags::InvokeMethod);
-}
-
-static Handle<Value> GetProperties(const Arguments &args)
-{
-	return GetMembers(args, MemberTypes::Field | MemberTypes::Property);
-}
-
-static Handle<Value> InvokeGetter(const Arguments& args)
-{
-	return InvokeMember(args, BindingFlags::GetField | BindingFlags::GetProperty);
-}
-
-static Handle<Value> InvokeSetter(const Arguments& args)
-{
-	return InvokeMember(args, BindingFlags::SetField | BindingFlags::SetProperty);
-}
-
-static Handle<Value> IsCLRObject(const Arguments& args)
-{
-	HandleScope scope;
-
-	if (args.Length() != 1)
+	// clr.isCLRObject(obj) : boolean
+	static Handle<Value> IsCLRObject(const Arguments& args)
 	{
-		ThrowException(Exception::TypeError(String::New("Argument error")));
-		return scope.Close(Undefined());
+		HandleScope scope;
+
+		if (args.Length() != 1 ||
+			args[0].IsEmpty())
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		return scope.Close(Boolean::New(CLRObject::IsWrapped(args[0])));
 	}
+	
+public:
+	static void Init(Handle<Object> exports)
+	{
+		exports->Set(String::NewSymbol("import"), FunctionTemplate::New(Import)->GetFunction());
+		exports->Set(String::NewSymbol("getAssemblies"), FunctionTemplate::New(GetAssemblies)->GetFunction());
+		exports->Set(String::NewSymbol("getTypes"), FunctionTemplate::New(GetTypes)->GetFunction());
+		exports->Set(String::NewSymbol("createConstructor"), FunctionTemplate::New(CreateConstructor)->GetFunction());
+		exports->Set(String::NewSymbol("getMembers"), FunctionTemplate::New(GetMembers)->GetFunction());
+		exports->Set(String::NewSymbol("invokeMethod"), FunctionTemplate::New(InvokeMethod)->GetFunction());
+		exports->Set(String::NewSymbol("getField"), FunctionTemplate::New(GetField)->GetFunction());
+		exports->Set(String::NewSymbol("setField"), FunctionTemplate::New(SetField)->GetFunction());
+		exports->Set(String::NewSymbol("isCLRObject"), FunctionTemplate::New(IsCLRObject)->GetFunction());
+	}
+};
 
-	return scope.Close(Boolean::New(CLRObject::IsWrapped(args[0])));
-}
-
-static void Init(Handle<Object> exports)
-{
-	exports->Set(String::NewSymbol("import"), FunctionTemplate::New(Import)->GetFunction());
-	exports->Set(String::NewSymbol("assemblies"), FunctionTemplate::New(GetAssemblies)->GetFunction());
-	exports->Set(String::NewSymbol("types"), FunctionTemplate::New(GetTypes)->GetFunction());
-	exports->Set(String::NewSymbol("constructor"), FunctionTemplate::New(CreateConstructor)->GetFunction());
-	exports->Set(String::NewSymbol("methods"), FunctionTemplate::New(GetMethods)->GetFunction());
-	exports->Set(String::NewSymbol("properties"), FunctionTemplate::New(GetProperties)->GetFunction());
-	exports->Set(String::NewSymbol("invoke"), FunctionTemplate::New(InvokeMethod)->GetFunction());
-	exports->Set(String::NewSymbol("get"), FunctionTemplate::New(InvokeGetter)->GetFunction());
-	exports->Set(String::NewSymbol("set"), FunctionTemplate::New(InvokeSetter)->GetFunction());
-	exports->Set(String::NewSymbol("isCLRObject"), FunctionTemplate::New(IsCLRObject)->GetFunction());
-}
-
-NODE_MODULE(clr, Init);
+NODE_MODULE(clr, CLR::Init);

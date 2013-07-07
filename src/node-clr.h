@@ -3,16 +3,17 @@
 
 #include <vector>
 #include <vcclr.h>
-#include <node.h>
 #include <v8.h>
+#include <node.h>
 
 #using <mscorlib.dll>
 #using <System.dll>
 #using <System.Core.dll>
 
-#include "CLRObject.h"
-#include "V8Binder.h"
-#include "V8Callback.h"
 #include "Marshal.h"
+#include "CLRObject.h"
+#include "CLRBinder.h"
+#include "V8Function.h"
+#include "V8AsyncInvocation.h"
 
 #endif

@@ -1,16 +1,42 @@
-#ifndef UTIL_H_
-#define UTIL_H_
+#ifndef MARSHAL_H_
+#define MARSHAL_H_
 
 #include "node-clr.h"
 
-System::String^ CLRString(v8::Handle<v8::Value> value);
-v8::Local<v8::String> V8String(System::String ^value);
-v8::Local<v8::String> V8Symbol(System::String ^value);
-System::Object^ CLRValue(v8::Handle<v8::Value> value);
-v8::Handle<v8::Value> V8Value(System::Object^ value);
-array<System::Object^>^ CLRArguments(const v8::Arguments &args);
-array<System::Object^>^ CLRArguments(v8::Handle<v8::Array> args);
-std::vector<v8::Handle<v8::Value> > V8Arguments(array<System::Object^>^ args);
-v8::Local<v8::Value> V8Exception(System::Exception ^ex);
+
+/*
+ * String conversions
+ */
+
+System::String^ ToCLRString(v8::Handle<v8::Value> value);
+
+v8::Local<v8::String> ToV8String(System::String^ value);
+
+v8::Local<v8::String> ToV8Symbol(System::String^ value);
+
+
+/*
+ * Value conversion
+ */
+
+System::Object^ ToCLRValue(v8::Handle<v8::Value> value, System::Type^ type = nullptr);
+
+v8::Handle<v8::Value> ToV8Value(System::Object^ value);
+
+
+/*
+ * Arguments conversions
+ */
+
+array<System::Object^>^ ToCLRArguments(v8::Handle<v8::Array> args, array<System::Reflection::ParameterInfo^>^ params = nullptr);
+
+std::vector<v8::Handle<v8::Value> > ToV8Arguments(array<System::Object^>^ args);
+
+
+/*
+ * Exception conversions
+ */
+
+v8::Local<v8::Value> ToV8Exception(System::Exception^ ex);
 
 #endif

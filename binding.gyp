@@ -9,22 +9,30 @@
         "lib/clr.js",
         "src/node-clr.h",
         "src/node-clr.cc",
-        "src/CLRObject.h",
-        "src/CLRObject.cc",
-        "src/V8Binder.h",
-        "src/V8Binder.cc",
-        "src/V8Callback.h",
-        "src/V8Callback.cc",
         "src/Marshal.h",
         "src/Marshal.cc",
-        "test/test.js" ],
+        "src/CLRObject.h",
+        "src/CLRObject.cc",
+        "src/CLRBinder.h",
+        "src/CLRBinder.cc",
+        "src/V8Function.h",
+        "src/V8Function.cc",
+        "src/V8AsyncInvocation.h",
+        "src/V8AsyncInvocation.cc",
+        "test/clr.js",
+        "test/clr.node.js"
+      ],
+      "msvs_settings": {
+        "VCCLCompilerTool": {
+          "AdditionalOptions": [ "/clr" ]
+        }
+      },
       "configurations" : {
         "Release": {
           "msvs_settings": {
             "VCCLCompilerTool": {
               "RuntimeLibrary": 2,
-              "RuntimeTypeInfo": "true",
-              "AdditionalOptions": [ "/clr" ],
+              "RuntimeTypeInfo": "true"
             }
           }
         },
@@ -33,8 +41,7 @@
             "VCCLCompilerTool": {
               "RuntimeLibrary": 3,
               "BasicRuntimeChecks": 0,
-              "ExceptionHandling": 0,
-              "AdditionalOptions": [ "/clr" ],
+              "ExceptionHandling": 0
             }
           }
         }
