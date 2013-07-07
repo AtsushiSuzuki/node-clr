@@ -88,7 +88,6 @@ describe('clr', function () {
     });
   });
   
-  /*
   it('async callback should work', function (done) {
     var ns = clr.init({ global: false });
 
@@ -101,5 +100,4 @@ describe('clr', function () {
       done();
     }, 100);
   });
-  */
 });

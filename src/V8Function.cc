@@ -18,7 +18,8 @@ System::Object^ V8Function::Invoke(array<System::Object^>^ args)
 	if (this->threadId == uv_thread_self())
 	{
 		auto params = ToV8Arguments(args);
-		auto result = (*this->pFunc)->Call(Local<v8::Object>(), (int)params.size(), &(params[0]));
+		auto &func = (*this->pFunc);
+		auto result = func->Call(func, (int)params.size(), (0 < params.size()) ? &(params[0]) : nullptr);
 
 		return ToCLRValue(result);
 	}
