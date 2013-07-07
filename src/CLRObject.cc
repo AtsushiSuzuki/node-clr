@@ -49,7 +49,6 @@ Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Fun
 	auto type = System::Type::GetType(ToCLRString(typeName));
 	if (type == nullptr)
 	{
-		System::Console::WriteLine("{0}, {1}", ToCLRString(typeName), type);
 		throw gcnew System::ArgumentException("Type not found");
 	}
 
