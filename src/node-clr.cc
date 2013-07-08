@@ -3,6 +3,7 @@
 using namespace v8;
 using namespace System::IO;
 using namespace System::Reflection;
+using namespace System::Text::RegularExpressions;
 
 /*
  * main module
@@ -179,13 +180,7 @@ class CLR
 			return scope.Close(Undefined());
 		}
 
-		auto type = System::Type::GetType(ToCLRString(args[0]));
-		if (type == nullptr)
-		{
-			ThrowException(Exception::Error(String::New("Type not found")));
-			return scope.Close(Undefined());
-		}
-
+		auto type = CLRGetType(ToCLRString(args[0]));
 		auto isStatic = !args[1]->BooleanValue();
 		
 		auto obj = Object::New();
@@ -250,7 +245,7 @@ class CLR
 					: Array::New();
 				auto canGet = pi->CanRead;
 				auto canSet = pi->CanWrite;
-				for (int i = 0; i < access->Length(); i++)
+				for (int i = 0; i < (int)access->Length(); i++)
 				{
 					if (access->Get(Number::New(i))->StrictEquals(String::New("get")))
 					{
@@ -438,3 +433,24 @@ public:
 };
 
 NODE_MODULE(clr, CLR::Init);
+
+
+System::Type^ CLRGetType(System::String^ name)
+{
+	auto m = Regex::Match(name, "^([^,]*), (.*)$");
+	if (m->Success)
+	{
+		auto typeName = m->Groups[1]->Value;
+		auto assemblyName = m->Groups[2]->Value;
+
+		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
+		{
+			if (assemblyName == assembly->FullName)
+			{
+				return assembly->GetType(typeName, true);
+			}
+		}
+	}
+
+	return System::Type::GetType(name, true);
+}

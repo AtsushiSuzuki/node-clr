@@ -14,11 +14,7 @@ System::Object^ CLRBinder::InvokeConstructor(
 	Handle<Value> typeName,
 	const Arguments& args)
 {
-	auto type = System::Type::GetType(ToCLRString(typeName));
-	if (type == nullptr)
-	{
-		throw gcnew System::ArgumentException("Type not found");
-	}
+	auto type = CLRGetType(ToCLRString(typeName));
 
 	auto arr = Array::New();
 	for (int i = 0; i < args.Length(); i++)
@@ -35,7 +31,7 @@ System::Object^ CLRBinder::InvokeConstructor(
 	System::Type^ type,
 	Handle<Array> args)
 {
-	if (type->IsValueType && args->Length() == 0)
+	if (args->Length() == 0)
 	{
 		return System::Activator::CreateInstance(type);
 	}
@@ -62,11 +58,7 @@ Handle<Value> CLRBinder::InvokeMethod(
 	Handle<Value> target,
 	Handle<Value> args)
 {
-	auto type = System::Type::GetType(ToCLRString(typeName));
-	if (type == nullptr)
-	{
-		throw gcnew System::ArgumentException("Type not found");
-	}
+	auto type = CLRGetType(ToCLRString(typeName));
 
 	return InvokeMethod(
 		type,
@@ -222,7 +214,7 @@ array<System::Object^>^ ToCLRWildcardArguments(
 	Handle<Array> args)
 {
 	auto arr = gcnew array<System::Object^>(args->Length());
-	for (int i = 0; i < args->Length(); i++)
+	for (int i = 0; i < (int)args->Length(); i++)
 	{
 		arr[i] = CLRWildcardValue(args->Get(Number::New(i)));
 	}
@@ -234,11 +226,7 @@ Handle<Value> CLRBinder::GetField(
 	Handle<Value> name,
 	Handle<Value> target)
 {
-	auto type = System::Type::GetType(ToCLRString(typeName));
-	if (type == nullptr)
-	{
-		throw gcnew System::ArgumentException("Type not found");
-	}
+	auto type = CLRGetType(ToCLRString(typeName));
 
 	return GetField(
 		type,
@@ -264,11 +252,7 @@ void CLRBinder::SetField(
 	Handle<Value> target,
 	Handle<Value> value)
 {
-	auto type = System::Type::GetType(ToCLRString(typeName));
-	if (type == nullptr)
-	{
-		throw gcnew System::ArgumentException("Type not found");
-	}
+	auto type = CLRGetType(ToCLRString(typeName));
 
 	SetField(
 		type,

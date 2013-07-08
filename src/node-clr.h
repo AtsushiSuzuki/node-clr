@@ -16,4 +16,6 @@
 #include "V8Function.h"
 #include "V8AsyncInvocation.h"
 
+System::Type^ CLRGetType(System::String^ name);
+
 #endif

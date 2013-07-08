@@ -46,11 +46,7 @@ System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 
 Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Function> initializer)
 {
-	auto type = System::Type::GetType(ToCLRString(typeName));
-	if (type == nullptr)
-	{
-		throw gcnew System::ArgumentException("Type not found");
-	}
+	auto type = CLRGetType(ToCLRString(typeName));
 
 	auto data = Object::New();
 	data->Set(String::NewSymbol("type"), ToV8String(type->AssemblyQualifiedName));

@@ -165,7 +165,7 @@ array<System::Object^>^ ToCLRArguments(
 	array<ParameterInfo^>^ params)
 {
 	auto arr = gcnew array<System::Object^>(args->Length());
-	for (int i = 0; i < args->Length(); i++)
+	for (int i = 0; i < (int)args->Length(); i++)
 	{
 		arr[i] = ToCLRValue(
 			args->Get(Number::New(i)),

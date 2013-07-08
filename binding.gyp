@@ -24,7 +24,11 @@
       ],
       "msvs_settings": {
         "VCCLCompilerTool": {
-          "AdditionalOptions": [ "/clr" ]
+          "AdditionalOptions": [ "/clr" ],
+          "DisableSpecificWarnings": [ "4506" ]
+        },
+        "VCLinkerTool": {
+          "AdditionalOptions": [ "/ignore:4248" ]
         }
       },
       "configurations" : {
