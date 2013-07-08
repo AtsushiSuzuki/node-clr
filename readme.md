@@ -1,84 +1,166 @@
 # node-clr : Node.js binding for .NET Framework API
 
-## example:
+## Usage:
+	# npm install clr
+	# node
+	
 	> require('clr').init();
 	> System.Console.WriteLine('Hello, {0}!', 'world');
 	
 	'Hello, world!'
 	
+
 	> var now = new System.DateTime(2013, 7, 1);
 	> now.ToString();
 	
 	'2013/07/01 0:00:00'
 
 
-## prerequisites:
+## Prerequisites:
 
-This package is developed and tested on:
-
-- node.js v0.10.12
+- Node.js v0.10.12
 - .NET Framework 4.5
 - Visual Studio 2012
+- [Node.js native module build environment](https://github.com/TooTallNate/node-gyp)
 
 
-## usage:
-- clr.init([options]) : Namespace
-	- initialize CLR runtime with given assemblies and returns global namespace
-- options.assemblies: Array [default: mscorlib, System, System.Core]
-	- specify referenced assemblies
-- options.global: bool [default: true]
-	- inject CLR namespaces to global
-- options.imbue: bool [default: true]
-	- define each instance member on each instance, not on prototype
+## clr.init([options])
 
-### class Namespace:
-- namespace.{namespace name} : Namespace
-	- get nested namespace
-- namespace.{type name} : Type
-	- get type
+Initialize CLR rutime with given options. Returns global `namespace`.
 
-### class Type:
-- new type(args...) : Any
-	- invoke CLR constructor and returns wrapped CLR object or primitive
-- type.{static method name}(args...) : Any
-	- invoke static method and returns wrapped CLR object or primitive
-- type.{static property or field name} : Any
-	- invoke static property or field getter
-- type.{static property or field name} = value
-	- invoke static proprety or field setter
+- `options` {Object}
+	- `assemblies` {Array} - An array of assembly name (partial name, full name or absolute path to .dll/.exe).
+	  Defaults to `['mscorlib', 'System', 'System.Core']`.
+	- `global` {Boolean} - if `true`, CLR global namespace objects are injected into javascript global object.
+	  Defaults to `true`.
 
-### class Object:
-- object.{instance method name}(args...) : Any
-	- invoke instance method and returns wrapped CLR object or primitive
-- object.{property or field name} : Any
-	- invoke instance property or field getter
-- object.{static property or field name} = value
-	- invoke instance proprety or field setter
 
-## marshaling:
-### V8 => CLR:
-- null or undefined => null
-- boolean or Boolean => System.Boolean
-- number or Nubmer => System.Int32 or System.Double
-- string or String => System.String
-- function => System.Func<System.Object[], System.Object>
-- array => System.Object[]
-- object => System.Collections.Generic.Dictionary<System.String, System.Object>
+## CLR namespaces
 
-### CLR => V8
-- null or no return value => null
-- System.Boolean => boolean
-- System.SByte, System.Byte, System.Int16, System.UInt16, System.Int32, System.UInt32, System.Int64, System.UInt64, System.Single, System.Double, System.Decimal => number
-- System.String => string
-- System.Object => wrapped object
+- {Object}
+
+CLR namespace objects contain nested namespaces or types.
+
+
+## CLR types
+
+- {Function}
+
+CLR type functions work as constructor for corresponding CLR types.
+The constructor returns wrapped CLR object.
+
+	> var now = new System.DateTime(2013, 7, 1);
+
+The code above invokes CLR constructor [`DateTime (Int32, Int32, Int32)`](http://msdn.microsoft.com/ja-jp/library/xcfzdy4x.aspx)
+and returns {Object} that wraps `DateTime` instance.
+
+
+CLR type also contains static members.
+
+	> var now = System.DateTime.Now;
+
+The code above invokes CLR static property getter [`DateTime.Now`](http://msdn.microsoft.com/ja-jp/library/system.datetime.now.aspx).
+
+
+## CLR objects
+
+- {Object}
+
+Javascript object that wraps CLR instance, which contains instance members.
+
+	> var now = System.DateTime.Now;
+	> now.ToString();
+	
+	'2013/07/01 0:00:00'
+
+
+## CLR methods
+
+- {Function}
+
+CLR methods can be invoked as Javascript function. Arguments and return value are marshalled as conventions below.
+
+	> System.Console.WriteLine('Hello, {0}!', 'world');
+	
+	'Hello, world!'
+
+## CLR properties/fields
+
+- {Getter/Setter}
+
+CLR properties/fields are exposed as object's getter or setter function.
+
+	> var now = System.DateTime.Now;
+
+
+## CLR events
+
+- {Object}
+
+CLR events can be hooked by `add` and `remove` function.
+
+
+### event.add(handler)
+
+Add javascript event handler to specified event.
+
+- `handler` {Function}
+
+
+### event.remove(handler)
+
+Remove javascript event handler from event.
+
+** This isn't working right now **
+
+- `handler` {Function}
+
+
+## Marshaling:
+
+V8 => CLR:
+
+- `null` or `undefined` => `null`
+- `Boolean` => `System.Boolean`
+- `Nubmer` => Any numeric type or `System.Double`
+- `String` => `System.String`
+- `Function` => Any delegate type or `System.Func<System.Object[], System.Object>`
+- `Array` => Any type of array or `System.Object[]`
+- `object` => `System.Dynamic.ExpandoObject`
+
+CLR => V8:
+
+- `null` => `null`
+- `System.Boolean` => `Boolean`
+- Any numberic type => `Number`
+- `System.String` => `String`
+- Any other types => CLR wrapped object
+
+
+## Threading:
+
+You can use .NET threads. All Javascript callback functions are invoked in main event loop.
+
+	> var t = new System.Threading.Thread(function () {
+	> ... console.log('Hello, world!');
+	> ... });
+	> t.Start();
+	
+	'Hello, world!' // will be invoked asynchronously, but in main thread
+
 
 ## TODO:
-- V8 type-aware custom binder
-- function => delegate binding, with thread synchronization
-- events
-- generics
-- array
-- smarter marshaling
-- read and study Edge and DLR sources
-- cast
-- using
+- Testing
+- Better marshaling
+  - `String` => Enums
+  - `Object` => DataContract
+  - Handle overflow
+  - handle cyclic reference
+- Better repl support
+  - Custom inspect function
+- New Event api, resembles to EventEmitter
+- Prototype chain which reflects CLR inheritance
+- Generics
+- Array instantiation
+- Cast
+- Using
