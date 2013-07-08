@@ -292,7 +292,7 @@ array<System::Object^>^ BindToMethod(
 
 	// bind parameters
 	score = EXACT;
-	auto arguments = gcnew array<System::Object^>(args->Length());
+	auto arguments = gcnew array<System::Object^>(System::Math::Min((int)args->Length(), params->Length));
 	for (int i = 0; i < (int)args->Length(); i++)
 	{
 		if (isVarArgs &&
@@ -311,7 +311,9 @@ array<System::Object^>^ BindToMethod(
 			}
 			else
 			{
-				arguments[i] = arg2;
+				auto arr = System::Array::CreateInstance(varArgsType, 1);
+				arr->SetValue(arg2, 0);
+				arguments[i] = arr;
 				score = System::Math::Min(score, score2);
 			}
 		}
@@ -325,8 +327,20 @@ array<System::Object^>^ BindToMethod(
 		else
 		{
 			int s;
-			arguments[i] = ChangeType(args->Get(Number::New(i)), varArgsType, s);
-			
+			auto arg =  ChangeType(args->Get(Number::New(i)), varArgsType, s);
+
+			System::Array^ arr;
+			if (arguments[arguments->Length - 1] == nullptr)
+			{
+				arr = System::Array::CreateInstance(varArgsType, args->Length() - params->Length + 1);
+				arguments[arguments->Length - 1] = arr;
+			}
+			else
+			{
+				arr = (System::Array^)arguments[arguments->Length - 1];
+			}
+
+			arr->SetValue(arg, i - params->Length + 1);
 			score = System::Math::Min(score, s);
 		}
 	}
