@@ -662,7 +662,7 @@ System::Object^ ChangeType(
 		auto to = (IDictionary<System::String^, System::Object^>^)(gcnew ExpandoObject());
 		
 		auto names = from->GetOwnPropertyNames();
-		for (int i = 0; i < names->Length(); i++)
+		for (int i = 0; i < (int)names->Length(); i++)
 		{
 			int s;
 			auto name = names->Get(i);
@@ -699,7 +699,7 @@ System::Object^ ChangeType(
 		score = EXACT;
 		return System::Convert::ChangeType(value, type);
 	}
-	catch (System::InvalidCastException^ ex)
+	catch (System::InvalidCastException^)
 	{
 		score = INCOMPATIBLE;
 		return nullptr;

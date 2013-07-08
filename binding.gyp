@@ -37,6 +37,9 @@
             "VCCLCompilerTool": {
               "RuntimeLibrary": 2,
               "RuntimeTypeInfo": "true"
+            },
+            "VCLinkerTool": {
+              "LinkTimeCodeGeneration": 0
             }
           }
         },
