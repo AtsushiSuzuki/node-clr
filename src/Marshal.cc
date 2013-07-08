@@ -26,8 +26,7 @@ Local<String> ToV8Symbol(System::String ^value)
 }
 
 System::Object^ ToCLRValue(
-	v8::Handle<v8::Value> value,
-	System::Type^ type)
+	v8::Handle<v8::Value> value)
 {
 	if (value->IsNull() || value->IsUndefined())
 	{
@@ -56,50 +55,17 @@ System::Object^ ToCLRValue(
 	else if (value->IsFunction())
 	{
 		auto func = gcnew V8Function(Handle<Function>::Cast(value));
-		if (type != nullptr && System::Delegate::typeid->IsAssignableFrom(type))
-		{
-			return func->CreateDelegate(type);
-		}
-		else
-		{
-			return func->CreateDelegate();
-		}
+		return func->CreateDelegate();
 	}
 	else if (value->IsArray())
 	{
 		// TODO: handle cyclic reference
-		System::Type^ elementType = nullptr;
-		if (type != nullptr && type->IsArray && type->HasElementType)
-		{
-			elementType = type->GetElementType();
-		}
-		else if (type != nullptr &&
-			type->IsAssignableFrom(System::Array::typeid) &&
-			type->IsGenericType)
-		{
-			elementType = type->GetGenericArguments()[0];
-		}
-		
 		auto from = Handle<Array>::Cast(value);
 		auto to = gcnew array<System::Object^>(from->Length());
 		for (unsigned int i = 0; i < from->Length(); i++)
 		{
-			to[i] = ToCLRValue(from->Get(i), elementType);
+			to[i] = ToCLRValue(from->Get(i));
 		}
-		
-		if (elementType != nullptr && elementType != System::Object::typeid)
-		{
-			auto typedArray = System::Array::CreateInstance(elementType, from->Length());
-			try
-			{
-				System::Array::Copy(to, typedArray, to->Length);
-				return typedArray;
-			}
-			catch (System::InvalidCastException^)
-			{
-			}
-		}
-
 		return to;
 	}
 	else if (value->IsObject())
@@ -112,7 +78,7 @@ System::Object^ ToCLRValue(
 		for (unsigned int i = 0; i < names->Length(); i++)
 		{
 			auto name = names->Get(i);
-			to[ToCLRString(name)] = ToCLRValue(from->Get(name), nullptr);
+			to[ToCLRString(name)] = ToCLRValue(from->Get(name));
 		}
 		return to;
 	}
@@ -158,22 +124,6 @@ Handle<Value> ToV8Value(System::Object^ value)
 	{
 		return CLRObject::Wrap(value);
 	}
-}
-
-array<System::Object^>^ ToCLRArguments(
-	Handle<Array> args,
-	array<ParameterInfo^>^ params)
-{
-	auto arr = gcnew array<System::Object^>(args->Length());
-	for (int i = 0; i < (int)args->Length(); i++)
-	{
-		arr[i] = ToCLRValue(
-			args->Get(Number::New(i)),
-			(params != nullptr && i < params->Length)
-				? params[i]->ParameterType
-				: nullptr);
-	}
-	return arr;
 }
 
 std::vector<Handle<Value> > ToV8Arguments(array<System::Object^>^ args)

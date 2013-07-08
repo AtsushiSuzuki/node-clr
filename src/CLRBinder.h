@@ -41,8 +41,7 @@ private:
 
 	static System::Reflection::MethodBase^ SelectMethod(
 		array<System::Reflection::MethodBase^>^ methods,
-		v8::Handle<v8::Array> args,
-		array<System::Object^>^% params);
+		v8::Handle<v8::Array> args);
 	
 	static v8::Handle<v8::Value> GetField(
 		System::Type^ type,

@@ -2,12 +2,19 @@
 
 using namespace v8;
 using namespace System::Collections::Generic;
+using namespace System::Dynamic;
 using namespace System::Linq;
 using namespace System::Reflection;
 
 
-static System::Object^ CLRWildcardValue(Handle<Value> value);
-static array<System::Object^>^ ToCLRWildcardArguments(Handle<Array> args);
+static array<System::Object^>^ BindToMethod(MethodBase^ method, Handle<Array> args);
+static array<System::Object^>^ BindToMethod(MethodBase^ method, Handle<Array> args, int% score);
+static MethodBase^ FindMostSpecificMethod(array<MethodBase^>^ methods, Handle<Array> args);
+static int CompareMethods(MethodBase^ lhs, MethodBase^ rhs);
+static int CompareTypes(System::Type^ lhs, System::Type^ rhs);
+static System::Object^ ChangeType(Handle<Value> value, System::Type^ type);
+static System::Object^ ChangeType(Handle<Value> value, System::Type^ type, int% score);
+static System::Object^ ChangeType(System::Object^ value, System::Type^ type, int% score);
 
 
 System::Object^ CLRBinder::InvokeConstructor(
@@ -39,15 +46,13 @@ System::Object^ CLRBinder::InvokeConstructor(
 	{
 		auto ctors = type->GetConstructors();
 
-		array<System::Object^>^ params;
 		auto ctor = (ConstructorInfo^)SelectMethod(
 			Enumerable::ToArray(Enumerable::Cast<MethodBase^>(ctors)),
-			args,
-			params);
+			args);
 		return ctor->Invoke(
 			BindingFlags::OptionalParamBinding,
 			nullptr,
-			params,
+			BindToMethod(ctor, args),
 			nullptr);
 	}
 }
@@ -88,17 +93,15 @@ Handle<Value> CLRBinder::InvokeMethod(
 		}
 	}
 
-	array<System::Object^>^ params;
 	auto method = (MethodInfo^)SelectMethod(
 		match->ToArray(),
-		args,
-		params);
+		args);
 
 	auto result = method->Invoke(
 		target,
 		BindingFlags::OptionalParamBinding,
 		nullptr,
-		params,
+		BindToMethod(method, args),
 		nullptr);
 	if (result == nullptr &&
 		method->ReturnType == System::Void::typeid)
@@ -109,116 +112,6 @@ Handle<Value> CLRBinder::InvokeMethod(
 	{
 		return ToV8Value(result);
 	}
-}
-
-MethodBase^ CLRBinder::SelectMethod(
-	array<MethodBase^>^ methods,
-	Handle<Array> args,
-	array<System::Object^>^% params)
-{
-	// HACK: DefaultBinderの実装を流用する代わりに、独自で機能を実装する
-	if (methods->Length == 0)
-	{
-		throw gcnew System::MissingMethodException();
-	}
-
-	MethodBase^ method = nullptr;
-	params = ToCLRWildcardArguments(args);
-	System::Object^ state;
-	try
-	{
-		method = System::Type::DefaultBinder->BindToMethod(
-			BindingFlags::OptionalParamBinding,
-			methods,
-			params,
-			nullptr,
-			nullptr,
-			nullptr,
-			state);
-	}
-	catch (AmbiguousMatchException^)
-	{
-	}
-	catch (System::MissingMethodException^)
-	{
-	}
-
-	if (method != nullptr)
-	{
-		params = ToCLRArguments(args, method->GetParameters());
-		return method;
-	}
-
-	params = ToCLRArguments(args, nullptr);
-	return System::Type::DefaultBinder->BindToMethod(
-		BindingFlags::OptionalParamBinding,
-		methods,
-		params,
-		nullptr,
-		nullptr,
-		nullptr,
-		state);
-}
-
-System::Object^ CLRWildcardValue(
-	Handle<Value> value)
-{
-	if (value->IsNull() || value->IsUndefined())
-	{
-		return nullptr;
-	}
-	else if (value->IsBoolean())
-	{
-		return value->BooleanValue();
-	}
-	else if (value->IsInt32())
-	{
-		return value->Int32Value();
-	}
-	else if (value->IsUint32())
-	{
-		return value->Uint32Value();
-	}
-	else if (value->IsNumber())
-	{
-		return value->NumberValue();
-	}
-	else if (value->IsString())
-	{
-		return ToCLRString(value);
-	}
-	else if (value->IsFunction())
-	{
-		// return null
-		return nullptr;
-	}
-	else if (value->IsArray())
-	{
-		// return null
-		return nullptr;
-	}
-	else if (value->IsObject())
-	{
-		// return null
-		return nullptr;
-	}
-	else if (value->IsExternal())
-	{
-		return (System::IntPtr)(External::Unwrap(value));
-	}
-
-	throw gcnew System::NotImplementedException();
-}
-
-array<System::Object^>^ ToCLRWildcardArguments(
-	Handle<Array> args)
-{
-	auto arr = gcnew array<System::Object^>(args->Length());
-	for (int i = 0; i < (int)args->Length(); i++)
-	{
-		arr[i] = CLRWildcardValue(args->Get(Number::New(i)));
-	}
-	return arr;
 }
 
 Handle<Value> CLRBinder::GetField(
@@ -272,5 +165,529 @@ void CLRBinder::SetField(
 	auto fi = type->GetField(name);
 	fi->SetValue(
 		target,
-		ToCLRValue(value, fi->FieldType));
+		ChangeType(value, fi->FieldType));
+}
+
+enum {
+	INCOMPATIBLE = 0,
+	EXPLICIT_CONVERSION = 1,
+	IMPLICIT_CONVERSION = 2,
+	EXACT = 3,
+};
+
+MethodBase^ CLRBinder::SelectMethod(
+	array<MethodBase^>^ methods,
+	Handle<Array> args)
+{
+	if (methods->Length == 0)
+	{
+		throw gcnew System::MissingMethodException();
+	}
+
+	auto scores = gcnew array<int>(methods->Length);
+	for (int i = 0; i < methods->Length; i++)
+	{
+		BindToMethod(methods[i], args, scores[i]);
+	}
+
+	int max = Enumerable::Max(scores);
+	if (max < IMPLICIT_CONVERSION)
+	{
+		throw gcnew System::MissingMethodException();
+	}
+
+	auto canditates = gcnew List<MethodBase^>();
+	for (int i = 0; i < methods->Length; i++)
+	{
+		if (scores[i] == max)
+		{
+			canditates->Add(methods[i]);
+		}
+	}
+
+	return FindMostSpecificMethod(canditates->ToArray(), args);
+}
+
+array<System::Object^>^ BindToMethod(
+	MethodBase^ method,
+	Handle<Array> args)
+{
+	int score;
+	auto result = BindToMethod(
+		method,
+		args,
+		score);
+	if (INCOMPATIBLE < score)
+	{
+		return result;
+	}
+	else
+	{
+		throw gcnew System::MissingMethodException();
+	}
+}
+
+array<System::Object^>^ BindToMethod(
+	MethodBase^ method,
+	Handle<Array> args,
+	int% score)
+{
+	auto params = method->GetParameters();
+
+	// check for ref or out parameter
+	for each (ParameterInfo^ param in params)
+	{
+		if (param->ParameterType->IsByRef)
+		{
+			score = INCOMPATIBLE;
+			return nullptr;
+		}
+	}
+	
+	// check for parameter count
+	int paramsMin = 0, paramsMax = 0;
+	bool isVarArgs = false;
+	for each (ParameterInfo^ param in params)
+	{
+		if (0 < param->GetCustomAttributes(System::ParamArrayAttribute::typeid, false)->Length)
+		{
+			paramsMax = int::MaxValue;
+			isVarArgs = true;
+		}
+		else if (param->IsOptional)
+		{
+			paramsMax++;
+		}
+		else
+		{
+			paramsMin++;
+			paramsMax++;
+		}
+	}
+	if ((int)args->Length() < paramsMin ||
+		paramsMax < (int)args->Length())
+	{
+		score = INCOMPATIBLE;
+		return nullptr;
+	}
+
+	// get varargs type
+	System::Type^ varArgsType = nullptr;
+	if (isVarArgs)
+	{
+		auto paramType = params[params->Length - 1]->ParameterType;
+		if (paramType->IsArray && paramType->HasElementType)
+		{
+			varArgsType = paramType->GetElementType();
+		}
+		else if (paramType->IsGenericType)
+		{
+			varArgsType = paramType->GetGenericArguments()[0];
+		}
+		else
+		{
+			varArgsType = System::Object::typeid;
+		}
+	}
+
+	// bind parameters
+	score = EXACT;
+	auto arguments = gcnew array<System::Object^>(args->Length());
+	for (int i = 0; i < (int)args->Length(); i++)
+	{
+		if (isVarArgs &&
+			i == params->Length - 1 &&
+			i == (int)args->Length() - 1)
+		{
+			int score1;
+			auto arg1 = ChangeType(args->Get(Number::New(i)), params[i]->ParameterType, score1);
+			int score2;
+			auto arg2 = ChangeType(args->Get(Number::New(i)), varArgsType, score2);
+
+			if (score1 >= score2)
+			{
+				arguments[i] = arg1;
+				score = System::Math::Min(score, score1);
+			}
+			else
+			{
+				arguments[i] = arg2;
+				score = System::Math::Min(score, score2);
+			}
+		}
+		else if (i < params->Length)
+		{
+			int s;
+			arguments[i] = ChangeType(args->Get(Number::New(i)), params[i]->ParameterType, s);
+
+			score = System::Math::Min(score, s);
+		}
+		else
+		{
+			int s;
+			arguments[i] = ChangeType(args->Get(Number::New(i)), varArgsType, s);
+			
+			score = System::Math::Min(score, s);
+		}
+	}
+
+	return arguments;
+}
+
+MethodBase^ FindMostSpecificMethod(
+	array<MethodBase^>^ methods,
+	Handle<Array> args)
+{
+	auto current = methods[0];
+	for (int i = 1; i < methods->Length; i++)
+	{
+		if (0 < CompareMethods(current, methods[i]))
+		{
+			current = methods[i];
+		}
+	}
+	return current;
+}
+
+int CompareMethods(MethodBase^ lhs, MethodBase^ rhs)
+{
+	auto params1 = lhs->GetParameters();
+	auto params2 = rhs->GetParameters();
+	
+	auto count = System::Math::Min(params1->Length, params2->Length);
+	for (int i = 0; i < count; i++)
+	{
+		int c = CompareTypes(params1[i]->ParameterType, params2[i]->ParameterType);
+		if (c != 0)
+		{
+			return c;
+		}
+	}
+
+	return 0;
+}
+
+int CompareTypes(System::Type^ lhs, System::Type^ rhs)
+{
+	if (lhs == rhs)
+	{
+		return 0;
+	}
+	else
+	{
+		if (lhs->IsAssignableFrom(rhs))
+		{
+			return 1;
+		}
+		else if (rhs->IsAssignableFrom(lhs))
+		{
+			return -1;
+		}
+
+		// compare primitive types
+		if (lhs->IsPrimitive && rhs->IsPrimitive)
+		{
+			return (int)System::Type::GetTypeCode(rhs) - (int)System::Type::GetTypeCode(lhs);
+		}
+
+		// compare array types
+		if (lhs->IsArray && rhs->IsArray)
+		{
+			return CompareTypes(lhs->GetElementType(), rhs->GetElementType());
+		}
+		if (lhs->IsGenericType && rhs->IsGenericType &&
+			lhs->GetGenericTypeDefinition() == rhs->GetGenericTypeDefinition())
+		{
+			auto typeParams1 = lhs->GetGenericArguments();
+			auto typeParams2 = rhs->GetGenericArguments();
+
+			for (int i = 0; i < typeParams1->Length; i++)
+			{
+				int c = CompareTypes(typeParams1[i], typeParams2[i]);
+				if (c != 0)
+				{
+					return c;
+				}
+			}
+		}
+
+		// compare delegate types
+		if (System::Delegate::typeid->IsAssignableFrom(lhs) &&
+			System::Delegate::typeid->IsAssignableFrom(rhs))
+		{
+			auto params1 = lhs->GetMethod("Invoke")->GetParameters();
+			auto params2 = rhs->GetMethod("Invoke")->GetParameters();
+
+			int c = params2->Length - params1->Length;
+			if (c != 0)
+			{
+				return c;
+			}
+
+			for (int i = 0; i < params1->Length; i++)
+			{
+				c = CompareTypes(params1[i]->ParameterType, params2[i]->ParameterType);
+				if (c != 0)
+				{
+					return c;
+				}
+			}
+		}
+
+		return 0;
+	}
+}
+
+System::Object^ ChangeType(
+	Handle<Value> value,
+	System::Type^ type)
+{
+	int score;
+	auto result = ChangeType(
+		value,
+		type,
+		score);
+
+	if (INCOMPATIBLE < score)
+	{
+		return result;
+	}
+	else
+	{
+		throw gcnew System::InvalidCastException();
+	}
+}
+
+System::Object^ ChangeType(
+	Handle<Value> value,
+	System::Type^ type,
+	int% score)
+{
+	// unwrap value
+	if (CLRObject::IsWrapped(value))
+	{
+		return ChangeType(CLRObject::Unwrap(value), type, score);
+	}
+
+	// null
+	if (value->IsNull() ||
+		value->IsUndefined())
+	{
+		if (!type->IsValueType || (
+			type->IsGenericType &&
+			type->GetGenericTypeDefinition() == System::Nullable<int>::typeid->GetGenericTypeDefinition()))
+		{
+			score = EXACT;
+			return nullptr;
+		}
+		else
+		{
+			score = INCOMPATIBLE;
+			return System::Activator::CreateInstance(type);
+		}
+	}
+
+	// unwrap nullable
+	if (type->IsGenericType &&
+		type->GetGenericTypeDefinition() == System::Nullable<int>::typeid->GetGenericTypeDefinition())
+	{
+		type = type->GetGenericArguments()[0];
+	}
+
+	// primitives
+	// TODO: overflow
+	// TODO: changeType
+	if (value->IsBoolean() || value->IsBooleanObject())
+	{
+		if (type == System::Boolean::typeid)
+		{
+			score = EXACT;
+			return value->BooleanValue();
+		}
+	}
+	else if (value->IsInt32())
+	{
+		if (type == System::Int32::typeid ||
+			type == System::Int64::typeid ||
+			type == System::Single::typeid ||
+			type == System::Double::typeid ||
+			type == System::Decimal::typeid)
+		{
+			score = EXACT;
+			return value->Int32Value();
+		}
+		else if (type == System::SByte::typeid ||
+			type == System::Byte::typeid ||
+			type == System::Int16::typeid ||
+			type == System::UInt16::typeid ||
+			type == System::UInt32::typeid ||
+			type == System::UInt64::typeid ||
+			type == System::Char::typeid)
+		{
+
+			score = IMPLICIT_CONVERSION;
+			return value->Int32Value();
+		}
+	}
+	else if (value->IsUint32())
+	{
+		if (type == System::UInt32::typeid ||
+			type == System::Int64::typeid ||
+			type == System::UInt64::typeid ||
+			type == System::Single::typeid ||
+			type == System::Double::typeid ||
+			type == System::Decimal::typeid)
+		{
+			score = EXACT;
+			return value->Uint32Value();
+		}
+		else if (type == System::SByte::typeid ||
+			type == System::Byte::typeid ||
+			type == System::Int16::typeid ||
+			type == System::UInt16::typeid ||
+			type == System::Int32::typeid ||
+			type == System::Char::typeid)
+		{
+			score = IMPLICIT_CONVERSION;
+			return value->Uint32Value();
+		}
+	}
+	else if (value->IsNumber() || value->IsNumberObject())
+	{
+		if (type == System::Double::typeid)
+		{
+			score = EXACT;
+			return value->NumberValue();
+		}
+		else if (type == System::SByte::typeid ||
+			type == System::Byte::typeid ||
+			type == System::Int16::typeid ||
+			type == System::UInt16::typeid ||
+			type == System::Int32::typeid ||
+			type == System::UInt32::typeid ||
+			type == System::Int64::typeid ||
+			type == System::UInt64::typeid ||
+			type == System::Char::typeid ||
+			type == System::Single::typeid ||
+			type == System::Decimal::typeid)
+		{
+			score = IMPLICIT_CONVERSION;
+			return value->NumberValue();
+		}
+	}
+	else if (value->IsString() || value->IsStringObject())
+	{
+		if (type == System::String::typeid)
+		{
+			score = EXACT;
+			return ToCLRString(value);
+		}
+	}
+	else if (value->IsFunction())
+	{
+		auto func = gcnew V8Function(Handle<Function>::Cast(value));
+		if (type == System::Object::typeid ||
+			type == System::Delegate::typeid ||
+			type == System::MulticastDelegate::typeid)
+		{
+			score = EXACT;
+			return func->CreateDelegate();
+		}
+		else if (System::Delegate::typeid->IsAssignableFrom(type))
+		{
+			score = EXACT;
+			return func->CreateDelegate(type);
+		}
+	}
+	else if (value->IsArray())
+	{
+		// TODO: handle cyclic reference
+		auto elementType = System::Object::typeid;
+		if (type->IsArray && type->HasElementType)
+		{
+			elementType = type->GetElementType();
+		}
+		else if (type->IsGenericType)
+		{
+			auto d = type->GetGenericTypeDefinition();
+			if (d == IEnumerable<int>::typeid->GetGenericTypeDefinition() ||
+				d == ICollection<int>::typeid->GetGenericTypeDefinition() ||
+				d == IList<int>::typeid->GetGenericTypeDefinition() ||
+				d == IReadOnlyCollection<int>::typeid->GetGenericTypeDefinition() ||
+				d == IReadOnlyList<int>::typeid->GetGenericTypeDefinition())
+			{
+				elementType = type->GetGenericArguments()[0];
+			}
+		}
+
+		auto from = Handle<Array>::Cast(value);
+		auto to = System::Array::CreateInstance(elementType, from->Length());
+		for (int i = 0; i < (int)from->Length(); i++)
+		{
+			int s;
+			to->SetValue(
+				ChangeType(
+					from->Get(i),
+					elementType,
+					s),
+				i);
+			score = System::Math::Min(s, score);
+		}
+
+		if (type->IsAssignableFrom(to->GetType()))
+		{
+			return to;
+		}
+	}
+	else
+	{
+		// TODO: handle DataContractAttribute
+		// TODO: handle cyclic reference
+
+		auto from = Handle<Object>::Cast(value);
+		auto to = (IDictionary<System::String^, System::Object^>^)(gcnew ExpandoObject());
+		
+		auto names = from->GetOwnPropertyNames();
+		for (int i = 0; i < names->Length(); i++)
+		{
+			int s;
+			auto name = names->Get(i);
+			to[ToCLRString(name)] = ChangeType(from->Get(name), System::Object::typeid, s);
+
+			score = System::Math::Min(s, score);
+		}
+
+		if (type->IsAssignableFrom(ExpandoObject::typeid))
+		{
+			return to;
+		}
+	}
+
+	if (type == System::Object::typeid)
+	{
+		score = EXACT;
+		return ToCLRValue(value);
+	}
+	else
+	{
+		score = INCOMPATIBLE;
+		return nullptr;
+	}
+}
+
+System::Object^ ChangeType(
+	System::Object^ value,
+	System::Type^ type,
+	int% score)
+{
+	try
+	{
+		score = EXACT;
+		return System::Convert::ChangeType(value, type);
+	}
+	catch (System::InvalidCastException^ ex)
+	{
+		score = INCOMPATIBLE;
+		return nullptr;
+	}
 }
