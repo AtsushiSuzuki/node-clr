@@ -37,7 +37,9 @@
 
 ## Prerequisites:
 
-- Node.js v0.10.12
+This library is built and tested on following environment:
+
+- Node.js v0.10.13
 - .NET Framework 4.5
 - Visual Studio 2012
 - [Node.js native module build environment](https://github.com/TooTallNate/node-gyp)
