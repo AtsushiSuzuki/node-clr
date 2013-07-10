@@ -694,6 +694,13 @@ System::Object^ ChangeType(
 	System::Type^ type,
 	int% score)
 {
+	if (value != nullptr &&
+		type->IsAssignableFrom(value->GetType()))
+	{
+		score = EXACT;
+		return value;
+	}
+
 	try
 	{
 		score = EXACT;
