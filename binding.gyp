@@ -17,8 +17,8 @@
         "src/CLRBinder.cc",
         "src/V8Function.h",
         "src/V8Function.cc",
-        "src/V8AsyncInvocation.h",
-        "src/V8AsyncInvocation.cc",
+		"src/V8Delegate.h",
+		"src/V8Delegate.cc",
         "test/clr.js",
         "test/clr.node.js"
       ],

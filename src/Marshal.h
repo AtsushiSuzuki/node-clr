@@ -29,16 +29,12 @@ System::Object^ ChangeType(v8::Handle<v8::Value> value, System::Type^ type, int&
 
 System::Object^ ChangeType(System::Object^ value, System::Type^ type, int& match);
 
-/*
- * Arguments conversions
- */
-
-std::vector<v8::Handle<v8::Value> > ToV8Arguments(array<System::Object^>^ args);
-
 
 /*
  * Exception conversions
  */
+
+System::Exception^ ToCLRException(v8::Handle<v8::Value> ex);
 
 v8::Local<v8::Value> ToV8Exception(System::Exception^ ex);
 

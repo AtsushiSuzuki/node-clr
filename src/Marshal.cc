@@ -196,16 +196,15 @@ System::Object^ ChangeType(
 	}
 	else if (value->IsFunction())
 	{
-		auto func = gcnew V8Function(Handle<Function>::Cast(value));
 		if (type->IsAssignableFrom(System::MulticastDelegate::typeid))
 		{
 			match = EXACT;
-			return func->CreateDelegate();
+			return V8Delegate::CreateDelegate(Handle<Function>::Cast(value));
 		}
 		else if (System::Delegate::typeid->IsAssignableFrom(type))
 		{
 			match = EXACT;
-			return func->CreateDelegate(type);
+			return V8Delegate::CreateDelegate(Handle<Function>::Cast(value), type);
 		}
 	}
 	else if (value->IsArray())
@@ -417,16 +416,11 @@ Handle<Value> ToV8Value(System::Object^ value)
 	}
 }
 
-std::vector<Handle<Value> > ToV8Arguments(array<System::Object^>^ args)
+System::Exception^ ToCLRException(Handle<Value> ex)
 {
-	std::vector<Handle<Value> > v;
-
-	for (int i = 0; i < args->Length; i++)
-	{
-		v.push_back(ToV8Value(args[i]));
-	}
-
-	return v;
+	return gcnew System::Exception(
+		ToCLRString(
+		ex->ToObject()->Get(String::NewSymbol("message"))));
 }
 
 Local<Value> ToV8Exception(System::Exception^ ex)

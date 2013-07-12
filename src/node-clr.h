@@ -14,7 +14,7 @@
 #include "CLRObject.h"
 #include "CLRBinder.h"
 #include "V8Function.h"
-#include "V8AsyncInvocation.h"
+#include "V8Delegate.h"
 
 System::Type^ CLRGetType(System::String^ name);
 
