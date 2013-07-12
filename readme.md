@@ -16,23 +16,25 @@
 	'2013/07/01 0:00:00'
 
 
-	> require('../lib/clr').init({ assemblies: [ 'System.Windows.Forms' ] });
-	> var f = new System.Windows.Forms.Form();
+	> require('clr').init({ assemblies: [ 'System.Windows.Forms' ] });
+	> with (System.Windows.Forms) {
+	>   var f = new Form();
 	> 
-	> var t = new System.Windows.Forms.TextBox();
-	> t.Text = 'world';
-	> f.Controls.Add(t);
+	>   var t = new TextBox();
+	>   t.Text = 'world';
+	>   f.Controls.Add(t);
+	>   
+	>   var b = new Button();
+	>   b.Text = 'Greet';
+	>   b.Click.add(function (thiz, ea) {
+	>     console.log('clicked');
+	>     MessageBox.Show('Hello, ' + t.Text + '!');
+	>   });
+	>   b.Top = 20;
+	>   f.Controls.Add(b);
 	> 
-	> var b = new System.Windows.Forms.Button();
-	> b.Text = 'Greet';
-	> b.Click.add(function (thiz, ea) {
-	>   console.log('clicked');
-	>   System.Windows.Forms.MessageBox.Show('Hello, ' + t.Text + '!');
-	> });
-	> b.Top = 20;
-	> f.Controls.Add(b)
-	> 
-	> System.Windows.Forms.Application.Run(f);
+	>   Application.Run(f);
+	> }
 
 
 ## Prerequisites:
@@ -171,11 +173,17 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 
 
 ## TODO:
+- rewrite function invocation/callback codes
+  - create handle scope
+  - handle exception
+  - move ChangeType to Marshal.cc
+  - rewrite ChangeType around CLR wrapped types
 - Testing
 - Better marshaling
   - `String` => Enums
   - Array of `String` => Enum with FlagsAttribute
   - `Object` => DataContract
+  - `Buffer` or `ArrayBuffer` => Byte[]
   - Handle overflow
   - handle cyclic reference
 - Better repl support
@@ -185,4 +193,3 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - Generics
 - Array instantiation
 - Cast
-- Using
