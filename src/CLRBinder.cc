@@ -7,13 +7,6 @@ using namespace System::Linq;
 using namespace System::Reflection;
 
 
-static array<System::Object^>^ BindToMethod(MethodBase^ method, Handle<Array> args);
-static array<System::Object^>^ BindToMethod(MethodBase^ method, Handle<Array> args, int% score);
-static MethodBase^ FindMostSpecificMethod(array<MethodBase^>^ methods, Handle<Array> args);
-static int CompareMethods(MethodBase^ lhs, MethodBase^ rhs);
-static int CompareTypes(System::Type^ lhs, System::Type^ rhs);
-
-
 System::Object^ CLRBinder::InvokeConstructor(
 	Handle<Value> typeName,
 	const Arguments& args)
@@ -198,16 +191,16 @@ MethodBase^ CLRBinder::SelectMethod(
 	return FindMostSpecificMethod(canditates->ToArray(), args);
 }
 
-array<System::Object^>^ BindToMethod(
+array<System::Object^>^ CLRBinder::BindToMethod(
 	MethodBase^ method,
 	Handle<Array> args)
 {
-	int score;
+	int match;
 	auto result = BindToMethod(
 		method,
 		args,
-		score);
-	if (INCOMPATIBLE < score)
+		match);
+	if (INCOMPATIBLE < match)
 	{
 		return result;
 	}
@@ -217,10 +210,10 @@ array<System::Object^>^ BindToMethod(
 	}
 }
 
-array<System::Object^>^ BindToMethod(
+array<System::Object^>^ CLRBinder::BindToMethod(
 	MethodBase^ method,
 	Handle<Array> args,
-	int% score)
+	int% match)
 {
 	auto params = method->GetParameters();
 
@@ -229,7 +222,7 @@ array<System::Object^>^ BindToMethod(
 	{
 		if (param->ParameterType->IsByRef)
 		{
-			score = INCOMPATIBLE;
+			match = INCOMPATIBLE;
 			return nullptr;
 		}
 	}
@@ -257,7 +250,7 @@ array<System::Object^>^ BindToMethod(
 	if ((int)args->Length() < paramsMin ||
 		paramsMax < (int)args->Length())
 	{
-		score = INCOMPATIBLE;
+		match = INCOMPATIBLE;
 		return nullptr;
 	}
 
@@ -281,7 +274,7 @@ array<System::Object^>^ BindToMethod(
 	}
 
 	// bind parameters
-	score = EXACT;
+	match = EXACT;
 	auto arguments = gcnew array<System::Object^>(System::Math::Min((int)args->Length(), params->Length));
 	for (int i = 0; i < (int)args->Length(); i++)
 	{
@@ -297,14 +290,14 @@ array<System::Object^>^ BindToMethod(
 			if (score1 >= score2)
 			{
 				arguments[i] = arg1;
-				score = System::Math::Min(score, score1);
+				match = System::Math::Min(match, score1);
 			}
 			else
 			{
 				auto arr = System::Array::CreateInstance(varArgsType, 1);
 				arr->SetValue(arg2, 0);
 				arguments[i] = arr;
-				score = System::Math::Min(score, score2);
+				match = System::Math::Min(match, score2);
 			}
 		}
 		else if (i < params->Length)
@@ -312,7 +305,7 @@ array<System::Object^>^ BindToMethod(
 			int s;
 			arguments[i] = ChangeType(args->Get(Number::New(i)), params[i]->ParameterType, s);
 
-			score = System::Math::Min(score, s);
+			match = System::Math::Min(match, s);
 		}
 		else
 		{
@@ -331,14 +324,14 @@ array<System::Object^>^ BindToMethod(
 			}
 
 			arr->SetValue(arg, i - params->Length + 1);
-			score = System::Math::Min(score, s);
+			match = System::Math::Min(match, s);
 		}
 	}
 
 	return arguments;
 }
 
-MethodBase^ FindMostSpecificMethod(
+MethodBase^ CLRBinder::FindMostSpecificMethod(
 	array<MethodBase^>^ methods,
 	Handle<Array> args)
 {
@@ -353,7 +346,7 @@ MethodBase^ FindMostSpecificMethod(
 	return current;
 }
 
-int CompareMethods(MethodBase^ lhs, MethodBase^ rhs)
+int CLRBinder::CompareMethods(MethodBase^ lhs, MethodBase^ rhs)
 {
 	auto params1 = lhs->GetParameters();
 	auto params2 = rhs->GetParameters();
@@ -371,7 +364,7 @@ int CompareMethods(MethodBase^ lhs, MethodBase^ rhs)
 	return 0;
 }
 
-int CompareTypes(System::Type^ lhs, System::Type^ rhs)
+int CLRBinder::CompareTypes(System::Type^ lhs, System::Type^ rhs)
 {
 	if (lhs == rhs)
 	{

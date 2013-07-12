@@ -4,13 +4,6 @@
 #include "node-clr.h"
 
 
-enum {
-	INCOMPATIBLE = 0,
-	EXPLICIT_CONVERSION = 1,
-	IMPLICIT_CONVERSION = 2,
-	EXACT = 3,
-};
-
 /*
  * String conversions
  */

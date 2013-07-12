@@ -176,8 +176,6 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - rewrite function invocation/callback codes
   - create handle scope
   - handle exception
-  - move ChangeType to Marshal.cc
-  - rewrite ChangeType around CLR wrapped types
 - Testing
 - Better marshaling
   - `String` => Enums
