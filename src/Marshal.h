@@ -4,6 +4,13 @@
 #include "node-clr.h"
 
 
+enum {
+	INCOMPATIBLE = 0,
+	EXPLICIT_CONVERSION = 1,
+	IMPLICIT_CONVERSION = 2,
+	EXACT = 3,
+};
+
 /*
  * String conversions
  */
@@ -23,6 +30,11 @@ System::Object^ ToCLRValue(v8::Handle<v8::Value> value);
 
 v8::Handle<v8::Value> ToV8Value(System::Object^ value);
 
+System::Object^ ChangeType(v8::Handle<v8::Value> value, System::Type^ type);
+
+System::Object^ ChangeType(v8::Handle<v8::Value> value, System::Type^ type, int& match);
+
+System::Object^ ChangeType(System::Object^ value, System::Type^ type, int& match);
 
 /*
  * Arguments conversions

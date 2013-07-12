@@ -165,8 +165,8 @@ CLR => V8:
 You can use .NET threads. All Javascript callback functions are invoked in main event loop.
 
 	> var t = new System.Threading.Thread(function () {
-	> ... console.log('Hello, world!');
-	> ... });
+	>   console.log('Hello, world!');
+	> });
 	> t.Start();
 	
 	'Hello, world!' // will be invoked asynchronously, but in main thread
