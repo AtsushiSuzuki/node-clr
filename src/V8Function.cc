@@ -54,27 +54,27 @@ System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 	uv_sem_t semaphore;
 	uv_sem_init(&semaphore, 0);
 
+	uv_async_t async;
+	uv_async_init(uv_default_loop(), &async, &V8Function::AsyncCallback);
+
 	InvocationContext ctx = {
 		this,
+		async,
 		semaphore,
 		args,
 		nullptr,
 		nullptr
 	};
-
-	uv_async_t async;
-	uv_async_init(uv_default_loop(), &async, &V8Function::AsyncCallback);
 	async.data = &ctx;
 
 	uv_async_send(&async);
 	uv_sem_wait(&semaphore);
 
-	//uv_close((uv_handle_t*)(&async), nullptr);
 	uv_sem_destroy(&semaphore);
 
 	if (static_cast<System::Exception^>(ctx.exception) != nullptr)
 	{
-		throw ctx.exception;
+		throw static_cast<System::Exception^>(ctx.exception);
 	}
 
 	return ctx.result;
@@ -94,4 +94,5 @@ void V8Function::AsyncCallback(uv_async_t* handle, int status)
 	}
 
 	uv_sem_post(&ctx->semaphore);
+	uv_close((uv_handle_t*)(&ctx->async), nullptr);
 }

@@ -173,9 +173,7 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 
 
 ## TODO:
-- rewrite function invocation/callback codes
-  - create handle scope
-  - handle exception
+- Exception marshalling
 - Testing
 - Better marshaling
   - `String` => Enums

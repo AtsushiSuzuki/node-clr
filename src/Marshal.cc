@@ -418,6 +418,7 @@ Handle<Value> ToV8Value(System::Object^ value)
 
 System::Exception^ ToCLRException(Handle<Value> ex)
 {
+	// TODO:
 	return gcnew System::Exception(
 		ToCLRString(
 		ex->ToObject()->Get(String::NewSymbol("message"))));
@@ -425,5 +426,6 @@ System::Exception^ ToCLRException(Handle<Value> ex)
 
 Local<Value> ToV8Exception(System::Exception^ ex)
 {
+	// TODO:
 	return Exception::Error(ToV8String(ex->ToString()));
 }

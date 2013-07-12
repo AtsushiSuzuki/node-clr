@@ -29,6 +29,8 @@ private:
 	{
 		V8Function* thiz;
 
+		uv_async_t async;
+
 		uv_sem_t semaphore;
 
 		gcroot<array<System::Object^>^> args;
