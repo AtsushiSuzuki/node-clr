@@ -5,15 +5,15 @@
 
 
 [System::Serializable]
-public ref class JavascriptError : public System::Exception
+public ref class V8InvocationException : public System::Exception
 {
 public:
-	JavascriptError();
+	V8InvocationException();
 
-	JavascriptError(
+	V8InvocationException(
 		System::String^ message);
 
-	JavascriptError(
+	V8InvocationException(
 		System::String^ name,
 		System::String^ message,
 		System::String^ stack);
@@ -39,7 +39,7 @@ public:
 	virtual System::String^ ToString() override;
 
 protected:
-	JavascriptError(
+	V8InvocationException(
 		System::Runtime::Serialization::SerializationInfo^ info,
 		System::Runtime::Serialization::StreamingContext context);
 };

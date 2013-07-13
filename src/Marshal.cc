@@ -422,16 +422,16 @@ System::Exception^ ToCLRException(Handle<Value> ex)
 	if (ex.IsEmpty() ||
 		(!ex->IsString() && !ex->IsObject()))
 	{
-		return gcnew JavascriptError();
+		return gcnew V8InvocationException();
 	}
 	else if (ex->IsString())
 	{
-		return gcnew JavascriptError(ToCLRString(ex));
+		return gcnew V8InvocationException(ToCLRString(ex));
 	}
 	else
 	{
 		auto obj = Handle<Object>::Cast(ex);
-		return gcnew JavascriptError(
+		return gcnew V8InvocationException(
 			ToCLRString(obj->Get(String::NewSymbol("name"))),
 			ToCLRString(obj->Get(String::NewSymbol("message"))),
 			ToCLRString(obj->Get(String::NewSymbol("stack"))));

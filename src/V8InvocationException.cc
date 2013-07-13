@@ -4,14 +4,14 @@ using namespace v8;
 using namespace System::Runtime::Serialization;
 using namespace System::Text;
 
-JavascriptError::JavascriptError()
+V8InvocationException::V8InvocationException()
 	: System::Exception("Exception thrown from Javascript function")
 {
 	this->Name = nullptr;
 	this->Stack = nullptr;
 }
 
-JavascriptError::JavascriptError(
+V8InvocationException::V8InvocationException(
 	System::String^ message)
 	: System::Exception(message)
 {
@@ -19,7 +19,7 @@ JavascriptError::JavascriptError(
 	this->Stack = nullptr;
 }
 
-JavascriptError::JavascriptError(
+V8InvocationException::V8InvocationException(
 	System::String^ name,
 	System::String^ message,
 	System::String^ stack)
@@ -29,34 +29,34 @@ JavascriptError::JavascriptError(
 	this->Stack = stack;
 }
 
-JavascriptError::JavascriptError(
+V8InvocationException::V8InvocationException(
 	SerializationInfo^ info,
 	StreamingContext context)
 	: System::Exception(info, context)
 {
 }
 
-System::String^ JavascriptError::Name::get()
+System::String^ V8InvocationException::Name::get()
 {
 	return (System::String^)this->Data["Name"];
 }
 
-void JavascriptError::Name::set(System::String^ value)
+void V8InvocationException::Name::set(System::String^ value)
 {
 	this->Data["Name"] = value;
 }
 
-System::String^ JavascriptError::Stack::get()
+System::String^ V8InvocationException::Stack::get()
 {
 	return (System::String^)this->Data["Stack"];
 }
 
-void JavascriptError::Stack::set(System::String^ value)
+void V8InvocationException::Stack::set(System::String^ value)
 {
 	this->Data["Stack"] = value;
 }
 
-System::String^ JavascriptError::StackTrace::get()
+System::String^ V8InvocationException::StackTrace::get()
 {
 	auto sb = gcnew StringBuilder();
 
@@ -70,7 +70,7 @@ System::String^ JavascriptError::StackTrace::get()
 	return sb->ToString();
 }
 
-System::String^ JavascriptError::ToString()
+System::String^ V8InvocationException::ToString()
 {
 	auto sb = gcnew StringBuilder();
 
