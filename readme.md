@@ -187,9 +187,8 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - New Event api, resembles to EventEmitter
 - Prototype chain which reflects CLR inheritance
 - Generics
-- Array instantiation
-- Cast
+- cast
+- valueOf (explicit conversion from wrapped CLR object to javascript types)
+- Async invocation
 - Indexed property
 - Compiler API
-- Async invocation
-- valueOf (explicit conversion from wrapped CLR object to javascript types)
