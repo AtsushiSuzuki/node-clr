@@ -22,7 +22,8 @@
         "src/V8InvocationException.h",
         "src/V8InvocationException.cc",
         "test/clr.js",
-        "test/clr.node.js"
+        "test/clr.node.js",
+        "example/winforms.js"
       ],
       "msvs_settings": {
         "VCCLCompilerTool": {
