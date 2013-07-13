@@ -382,36 +382,33 @@ System::Object^ ChangeType(
 
 Handle<Value> ToV8Value(System::Object^ value)
 {
-	// primitives
 	if (value == nullptr)
 	{
 		return Local<Value>::New(Null());
 	}
-	else if (dynamic_cast<System::Boolean^>(value) != nullptr)
+
+	switch (System::Type::GetTypeCode(value->GetType()))
 	{
+	case System::TypeCode::Boolean:
 		return Boolean::New((System::Boolean)value);
-	}
-	else if (dynamic_cast<System::SByte^>(value) != nullptr ||
-		dynamic_cast<System::Byte^>(value) != nullptr ||
-		dynamic_cast<System::Int16^>(value) != nullptr ||
-		dynamic_cast<System::UInt16^>(value) != nullptr ||
-		dynamic_cast<System::Int32^>(value) != nullptr ||
-		dynamic_cast<System::UInt32^>(value) != nullptr ||
-		dynamic_cast<System::Int64^>(value) != nullptr ||
-		dynamic_cast<System::UInt64^>(value) != nullptr ||
-		dynamic_cast<System::Single^>(value) != nullptr ||
-		dynamic_cast<System::Double^>(value) != nullptr ||
-		dynamic_cast<System::Decimal^>(value) != nullptr)
-	{
+
+	case System::TypeCode::SByte:
+	case System::TypeCode::Byte:
+	case System::TypeCode::Int16:
+	case System::TypeCode::UInt16:
+	case System::TypeCode::Int32:
+	case System::TypeCode::UInt32:
+	case System::TypeCode::Int64:
+	case System::TypeCode::UInt64:
+	case System::TypeCode::Single:
+	case System::TypeCode::Double:
+	// case System::TypeCode::Decimal:
 		return Number::New(System::Convert::ToDouble(value));
-	}
-	else if (dynamic_cast<System::String^>(value) != nullptr)
-	{
+
+	case System::TypeCode::String:
 		return ToV8String((System::String^)value);
-	}
-	// objects
-	else
-	{
+
+	default:
 		return CLRObject::Wrap(value);
 	}
 }
