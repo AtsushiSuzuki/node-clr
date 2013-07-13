@@ -42,7 +42,7 @@ class CLR
 		}
 		catch (System::Exception^ ex)
 		{
-			ThrowException(ToV8Exception(ex));
+			ThrowException(ToV8Error(ex));
 			return scope.Close(Undefined());
 		}
 
@@ -152,7 +152,7 @@ class CLR
 		}
 		catch (System::Exception^ ex)
 		{
-			ThrowException(ToV8Exception(ex));
+			ThrowException(ToV8Error(ex));
 			return scope.Close(Undefined());
 		}
 
@@ -319,7 +319,7 @@ class CLR
 		}
 		catch (System::Exception^ ex)
 		{
-			ThrowException(ToV8Exception(ex));
+			ThrowException(ToV8Error(ex));
 			return scope.Close(Undefined());
 		}
 
@@ -356,7 +356,7 @@ class CLR
 		}
 		catch (System::Exception^ ex)
 		{
-			ThrowException(ToV8Exception(ex));
+			ThrowException(ToV8Error(ex));
 			return scope.Close(Undefined());
 		}
 
@@ -394,7 +394,7 @@ class CLR
 		}
 		catch (System::Exception^ ex)
 		{
-			ThrowException(ToV8Exception(ex));
+			ThrowException(ToV8Error(ex));
 			return scope.Close(Undefined());
 		}
 

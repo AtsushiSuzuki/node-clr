@@ -19,6 +19,8 @@
         "src/V8Function.cc",
 		"src/V8Delegate.h",
 		"src/V8Delegate.cc",
+		"src/JavascriptError.h",
+		"src/JavascriptError.cc",
         "test/clr.js",
         "test/clr.node.js"
       ],

@@ -15,6 +15,7 @@
 #include "CLRBinder.h"
 #include "V8Function.h"
 #include "V8Delegate.h"
+#include "JavascriptError.h"
 
 System::Type^ CLRGetType(System::String^ name);
 

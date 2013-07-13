@@ -77,7 +77,7 @@ Handle<Value> CLRObject::New(const Arguments& args)
 	}
 	catch (System::Exception^ ex)
 	{
-		ThrowException(ToV8Exception(ex));
+		ThrowException(ToV8Error(ex));
 		return scope.Close(Undefined());
 	}
 	

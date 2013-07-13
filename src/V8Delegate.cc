@@ -11,6 +11,7 @@ V8Delegate::V8Delegate(Handle<Function> function)
 
 V8Delegate::~V8Delegate()
 {
+	// TODO: is this safe?
 	delete pFunc;
 }
 

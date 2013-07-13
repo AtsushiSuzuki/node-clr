@@ -3,8 +3,11 @@
 using namespace v8;
 using namespace System::Collections::Generic;
 using namespace System::Dynamic;
+using namespace System::Linq;
 using namespace System::Reflection;
 using namespace System::Runtime::InteropServices;
+using namespace System::Text;
+using namespace System::Text::RegularExpressions;
 
 
 System::String^ ToCLRString(Handle<Value> value)
@@ -315,6 +318,7 @@ System::Object^ ChangeType(
 	auto from = System::Type::GetTypeCode(valueType);
 	auto to = System::Type::GetTypeCode(type);
 	const int conversionTable[19][19] = {
+		// from\to
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // Empty
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // Object
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DBNull
@@ -415,14 +419,64 @@ Handle<Value> ToV8Value(System::Object^ value)
 
 System::Exception^ ToCLRException(Handle<Value> ex)
 {
-	// TODO:
-	return gcnew System::Exception(
-		ToCLRString(
-		ex->ToObject()->Get(String::NewSymbol("message"))));
+	if (ex.IsEmpty() ||
+		(!ex->IsString() && !ex->IsObject()))
+	{
+		return gcnew JavascriptError();
+	}
+	else if (ex->IsString())
+	{
+		return gcnew JavascriptError(ToCLRString(ex));
+	}
+	else
+	{
+		auto obj = Handle<Object>::Cast(ex);
+		return gcnew JavascriptError(
+			ToCLRString(obj->Get(String::NewSymbol("name"))),
+			ToCLRString(obj->Get(String::NewSymbol("message"))),
+			ToCLRString(obj->Get(String::NewSymbol("stack"))));
+	}
 }
 
-Local<Value> ToV8Exception(System::Exception^ ex)
+Local<Value> ToV8Error(System::Exception^ ex)
 {
-	// TODO:
-	return Exception::Error(ToV8String(ex->ToString()));
+	auto err = Local<Object>::Cast(Exception::Error(ToV8String(ex->Message)));
+	
+	auto name = ex->GetType()->Name;
+	if (ex->Data["name"] != nullptr)
+	{
+		name = ex->Data["name"]->ToString();
+	}
+	err->Set(
+		String::NewSymbol("name"),
+		ToV8String(name));
+
+	auto stack = gcnew StringBuilder();
+	stack->AppendFormat("{0}: {1}", name, ex->Message);
+	if (ex->Data["stack"] != nullptr)
+	{
+		IEnumerable<System::String^>^ lines;
+		lines = Regex::Split(ex->Data["stack"]->ToString(), "\r?\n");
+		lines = Enumerable::Skip(lines, 1);
+		for each (System::String^ line in lines)
+		{
+			stack->AppendLine();
+			stack->Append(line);
+		}			
+	}
+	stack->AppendLine();
+	stack->Append(ex->StackTrace);
+	{
+		IEnumerable<System::String^>^ lines;
+		lines = Regex::Split(ToCLRString(err->Get(String::NewSymbol("stack"))), "\r?\n");
+		lines = Enumerable::Skip(lines, 1);
+		for each (System::String^ line in lines)
+		{
+			stack->AppendLine();
+			stack->Append(line);
+		}
+	}
+	err->Set(String::NewSymbol("stack"), ToV8String(stack->ToString()));
+
+	return err;
 }

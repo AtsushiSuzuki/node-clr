@@ -36,6 +36,6 @@ System::Object^ ChangeType(System::Object^ value, System::Type^ type, int& match
 
 System::Exception^ ToCLRException(v8::Handle<v8::Value> ex);
 
-v8::Local<v8::Value> ToV8Exception(System::Exception^ ex);
+v8::Local<v8::Value> ToV8Error(System::Exception^ ex);
 
 #endif
