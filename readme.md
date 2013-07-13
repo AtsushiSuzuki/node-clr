@@ -1,4 +1,4 @@
-# node-clr : Node.js binding for .NET Framework API
+# node-clr : .NET Framework API Binding for Node.js
 
 ## Usage:
 	# npm install clr
@@ -155,7 +155,7 @@ CLR => V8:
 
 - `null` => `null`
 - `System.Boolean` => `Boolean`
-- Any numberic type => `Number`
+- Any numberic type excepts System.Decimal => `Number`
 - `System.String` => `String`
 - Any other types => CLR wrapped object
 
@@ -177,15 +177,20 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - Testing
 - Better marshaling
   - `String` => Enums
-  - Array of `String` => Enum with FlagsAttribute
-  - `Object` => DataContract
-  - `Buffer` or `ArrayBuffer` => Byte[]
+  - Array of `String` => Enum with `FlagsAttribute`
+  - `Object` => class with `DataContractAttribute`
+  - `Buffer` or `ArrayBuffer` => `System.Byte[]`
+  - CLR types => `System.Type`
+  - `System.Char` => `String`
+  - `String` => `System.Char`
   - Handle overflow
   - handle cyclic reference
-- Better repl support
-  - Custom inspect function
 - New Event api, resembles to EventEmitter
 - Prototype chain which reflects CLR inheritance
 - Generics
 - Array instantiation
 - Cast
+- Indexed property
+- Compiler API
+- Async invocation
+- valueOf (explicit conversion from wrapped CLR object to javascript types)
