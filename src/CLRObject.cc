@@ -29,7 +29,8 @@ Handle<Object> CLRObject::Wrap(System::Object^ value)
 
 bool CLRObject::IsWrapped(Handle<Value> obj)
 {
-	return obj->IsObject() &&
+	return !obj.IsEmpty() &&
+		obj->IsObject() &&
 		obj->ToObject()->Has(String::NewSymbol("_clrType"));
 }
 

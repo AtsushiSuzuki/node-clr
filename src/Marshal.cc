@@ -67,7 +67,7 @@ System::Object^ ChangeType(
 	}
 
 	// null value
-	if (value->IsNull() || value->IsUndefined())
+	if (value.IsEmpty() || value->IsNull() || value->IsUndefined())
 	{
 		if (!type->IsValueType)
 		{
@@ -280,6 +280,20 @@ System::Object^ ChangeType(
 		}
 	}
 
+	if (System::Enum::typeid->IsAssignableFrom(type) &&
+		type != System::Enum::typeid &&
+		value->IsString())
+	{
+		try
+		{
+			match = IMPLICIT_CONVERSION;
+			return System::Enum::Parse(type, ToCLRString(value));
+		}
+		catch (System::Exception^)
+		{
+		}
+	}
+
 	match = INCOMPATIBLE;
 	return nullptr;
 }
@@ -408,6 +422,9 @@ Handle<Value> ToV8Value(System::Object^ value)
 	case System::TypeCode::Double:
 	// case System::TypeCode::Decimal:
 		return Number::New(System::Convert::ToDouble(value));
+
+	case System::TypeCode::Char:
+		return ToV8String(value->ToString());
 
 	case System::TypeCode::String:
 		return ToV8String((System::String^)value);

@@ -146,7 +146,7 @@ V8 => CLR:
 - `null` or `undefined` => `null`
 - `Boolean` => `System.Boolean`
 - `Nubmer` => Any numeric type or `System.Double`
-- `String` => `System.String`
+- `String` => `System.String` or Enums
 - `Function` => Any delegate type or `System.Func<System.Object[], System.Object>`
 - `Array` => Any type of array or `System.Object[]`
 - `object` => `System.Dynamic.ExpandoObject`
@@ -156,7 +156,7 @@ CLR => V8:
 - `null` => `null`
 - `System.Boolean` => `Boolean`
 - Any numberic type excepts System.Decimal => `Number`
-- `System.String` => `String`
+- `System.String` or `System.Char` => `String`
 - Any other types => CLR wrapped object
 
 
@@ -173,14 +173,12 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 
 
 ## TODO:
-- Testing
+- Unit test
+- Code comments
 - Better marshaling
-  - `String` => Enums
-  - Array of `String` => Enum with `FlagsAttribute`
   - `Object` => class with `DataContractAttribute`
   - `Buffer` or `ArrayBuffer` => `System.Byte[]`
   - CLR types => `System.Type`
-  - `System.Char` => `String`
   - `String` => `System.Char`
   - Handle overflow
   - handle cyclic reference
