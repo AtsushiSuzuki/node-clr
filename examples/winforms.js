@@ -1,10 +1,13 @@
 require('../lib/clr').init({ assemblies: [ 'System.Windows.Forms' ] });
 with (System.Windows.Forms) {
   var f = new Form();
-
+  
+  var p = new FlowLayoutPanel();
+  f.Controls.Add(p);
+  
   var t = new TextBox();
   t.Text = 'world';
-  f.Controls.Add(t);
+  p.Controls.Add(t);
   
   var b = new Button();
   b.Text = 'Greet';
@@ -12,8 +15,7 @@ with (System.Windows.Forms) {
     console.log('clicked');
     MessageBox.Show('Hello, ' + t.Text + '!');
   });
-  b.Top = 20;
-  f.Controls.Add(b);
+  p.Controls.Add(b);
 
   Application.Run(f);
 }
