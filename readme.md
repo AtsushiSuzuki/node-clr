@@ -180,7 +180,6 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
   - `Buffer` or `ArrayBuffer` => `System.Byte[]`
   - CLR types => `System.Type`
   - `String` => `System.Char`
-  - Handle overflow
   - handle cyclic reference
 - New Event api, resembles to EventEmitter
 - Prototype chain which reflects CLR inheritance
