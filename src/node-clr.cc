@@ -444,6 +444,8 @@ class CLR
 public:
 	static void Init(Handle<Object> exports)
 	{
+		CLRObject::Init();
+
 		exports->Set(String::NewSymbol("import"), FunctionTemplate::New(Import)->GetFunction());
 		exports->Set(String::NewSymbol("getAssemblies"), FunctionTemplate::New(GetAssemblies)->GetFunction());
 		exports->Set(String::NewSymbol("getTypes"), FunctionTemplate::New(GetTypes)->GetFunction());

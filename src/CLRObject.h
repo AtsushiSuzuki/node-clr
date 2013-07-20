@@ -8,6 +8,8 @@
 class CLRObject : public node::ObjectWrap
 {
 public:
+	static void Init();
+
 	static v8::Handle<v8::Object> Wrap(v8::Handle<v8::Object> obj, System::Object^ value);
 
 	static v8::Handle<v8::Object> Wrap(System::Object^ value);
@@ -20,6 +22,8 @@ public:
 
 private:
 	static v8::Handle<v8::Value> New(const v8::Arguments& args);
+
+	static v8::Persistent<v8::ObjectTemplate> tpl;
 
 	gcroot<System::Object^> value;
 

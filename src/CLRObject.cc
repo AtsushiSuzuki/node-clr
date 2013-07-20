@@ -3,6 +3,14 @@
 using namespace v8;
 
 
+Persistent<ObjectTemplate> CLRObject::tpl;
+
+void CLRObject::Init()
+{
+	tpl = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+	tpl->SetInternalFieldCount(1);
+}
+
 Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 {
 	auto wrapper = new CLRObject(value);
@@ -20,9 +28,6 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 
 Handle<Object> CLRObject::Wrap(System::Object^ value)
 {
-	auto tpl = ObjectTemplate::New();
-	tpl->SetInternalFieldCount(1);
-
 	auto obj = tpl->NewInstance();
 	return Wrap(obj, value);
 }
