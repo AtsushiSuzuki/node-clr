@@ -10,6 +10,10 @@ using namespace System::Text;
 using namespace System::Text::RegularExpressions;
 
 
+/*
+ * String conversion
+ */
+
 System::String^ ToCLRString(Handle<Value> value)
 {
 	return gcnew System::String((const wchar_t *)(*String::Value(value)));
@@ -28,6 +32,11 @@ Local<String> ToV8Symbol(System::String ^value)
 	Marshal::FreeHGlobal(System::IntPtr((void*)ptr));
 	return result;
 }
+
+
+/*
+ * Value conversion
+ */
 
 System::Object^ ToCLRValue(
 	v8::Handle<v8::Value> value)
@@ -433,6 +442,11 @@ Handle<Value> ToV8Value(System::Object^ value)
 		return CLRObject::Wrap(value);
 	}
 }
+
+
+/*
+ * Exception conversion
+ */
 
 System::Exception^ ToCLRException(Handle<Value> ex)
 {

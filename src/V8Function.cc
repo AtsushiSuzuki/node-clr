@@ -16,14 +16,17 @@ System::Object^ V8Function::Invoke(array<System::Object^>^ args)
 {
 	if (this->threadId == uv_thread_self())
 	{
+		// this is running on libuv event loop
 		return this->InvokeImpl(args);
 	}
 	else
 	{
+		// invoked by other thread
 		return this->InvokeAsync(args);
 	}
 }
 
+// invoke Javascript function
 System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 {
 	HandleScope scope;
@@ -49,6 +52,7 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 	return ToCLRValue(result);
 }
 
+// dispatch to libuv event loop
 System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 {
 	uv_sem_t semaphore;
@@ -68,8 +72,9 @@ System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 	async.data = &ctx;
 
 	uv_async_send(&async);
-	uv_sem_wait(&semaphore);
 
+	// wait for completion
+	uv_sem_wait(&semaphore);
 	uv_sem_destroy(&semaphore);
 
 	if (static_cast<System::Exception^>(ctx.exception) != nullptr)
@@ -93,6 +98,7 @@ void V8Function::AsyncCallback(uv_async_t* handle, int status)
 		ctx->exception = ex;
 	}
 
+	// notify completion
 	uv_sem_post(&ctx->semaphore);
 	uv_close((uv_handle_t*)(&ctx->async), nullptr);
 }

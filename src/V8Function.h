@@ -4,6 +4,7 @@
 #include "node-clr.h"
 
 
+// class that holds Javascript function, implements invocation and thread synchronization
 class V8Function
 {
 public:
@@ -11,6 +12,8 @@ public:
 
 	~V8Function();
 
+	// invoke Javascript method from C++/CLI
+	// if current thread is not nodejs thread, dispatch to libuv event loop
 	System::Object^ Invoke(array<System::Object^>^ args);
 
 private:

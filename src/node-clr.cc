@@ -102,6 +102,7 @@ class CLR
 		auto index = 0;
 		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
 		{
+			// exclude current assembly ("clr.node")
 			if (assembly == System::Reflection::Assembly::GetExecutingAssembly())
 			{
 				continue;
@@ -109,10 +110,12 @@ class CLR
 
 			for each (auto type in assembly->GetTypes())
 			{
+				// exclude non-public types
 				if (!type->IsPublic)
 				{
 					continue;
 				}
+				// exclude compiler generated types
 				if (type->IsSpecialName)
 				{
 					continue;
@@ -194,6 +197,7 @@ class CLR
 				!ei->IsSpecialName &&
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
+				// events
 				auto desc = Object::New();
 				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
 				desc->Set(String::NewSymbol("type"), String::New("event"));
@@ -205,6 +209,7 @@ class CLR
 				!fi->IsSpecialName &&
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
+				// fields
 				auto desc = Object::New();
 				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
 				desc->Set(String::NewSymbol("type"), String::New("field"));
@@ -224,6 +229,7 @@ class CLR
 				!mi->IsSpecialName &&
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
+				// methods
 				auto desc = Object::New();
 				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
 				desc->Set(String::NewSymbol("type"), String::New("method"));
@@ -234,6 +240,7 @@ class CLR
 			if (pi != nullptr &&
 				!pi->IsSpecialName)
 			{
+				// properties
 				auto desc = (obj->Has(ToV8Symbol(member->Name)))
 					? Local<Object>::Cast(obj->Get(ToV8Symbol(member->Name)))
 					: Object::New();
@@ -275,6 +282,7 @@ class CLR
 				!ti->IsSpecialName &&
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
+				// nested typess
 				auto desc = Object::New();
 				desc->Set(String::NewSymbol("name"), ToV8String(member->Name));
 				desc->Set(String::NewSymbol("type"), String::New("nestedType"));
@@ -403,6 +411,8 @@ class CLR
 	
 
 	// clr.isCLRObject(obj) : boolean
+	//   returns if specified object is CLR wrapped object
+	//   - obj: CLR wrapped object or any javascript value
 	static Handle<Value> IsCLRObject(const Arguments& args)
 	{
 		HandleScope scope;
@@ -417,6 +427,20 @@ class CLR
 		return scope.Close(Boolean::New(CLRObject::IsWrapped(args[0])));
 	}
 	
+	// resolve assemblies which is loaded by reflection
+	static Assembly^ ResolveAssembly(System::Object^ sender, System::ResolveEventArgs^ ea)
+	{
+		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
+		{
+			if (assembly->FullName == ea->Name)
+			{
+				return assembly;
+			}
+		}
+
+		return nullptr;
+	}
+
 public:
 	static void Init(Handle<Object> exports)
 	{
@@ -432,20 +456,6 @@ public:
 
 		System::AppDomain::CurrentDomain->AssemblyResolve += gcnew System::ResolveEventHandler(
 			&CLR::ResolveAssembly);
-	}
-
-private:
-	static Assembly^ ResolveAssembly(System::Object^ sender, System::ResolveEventArgs^ ea)
-	{
-		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
-		{
-			if (assembly->FullName == ea->Name)
-			{
-				return assembly;
-			}
-		}
-
-		return nullptr;
 	}
 };
 

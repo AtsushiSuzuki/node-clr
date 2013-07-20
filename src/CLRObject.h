@@ -4,6 +4,7 @@
 #include "node-clr.h"
 
 
+// node object wrapper that holds System::Object^
 class CLRObject : public node::ObjectWrap
 {
 public:
@@ -15,7 +16,7 @@ public:
 
 	static System::Object^ Unwrap(v8::Handle<v8::Value> obj);
 
-	static v8::Local<v8::Function> CreateConstructor(v8::Handle<v8::String> typeName, v8::Handle<v8::Function> initializer = v8::Handle<v8::Function>());
+	static v8::Local<v8::Function> CreateConstructor(v8::Handle<v8::String> typeName, v8::Handle<v8::Function> initializer);
 
 private:
 	static v8::Handle<v8::Value> New(const v8::Arguments& args);

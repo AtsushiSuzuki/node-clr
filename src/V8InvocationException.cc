@@ -56,6 +56,7 @@ void V8InvocationException::Stack::set(System::String^ value)
 	this->Data["Stack"] = value;
 }
 
+// merge Javascript stacktrace with .NET stacktrace
 System::String^ V8InvocationException::StackTrace::get()
 {
 	auto sb = gcnew StringBuilder();

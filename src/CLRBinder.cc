@@ -158,6 +158,11 @@ void CLRBinder::SetField(
 		ChangeType(value, fi->FieldType));
 }
 
+
+/*
+ * overload resolution
+ */
+
 MethodBase^ CLRBinder::SelectMethod(
 	array<MethodBase^>^ methods,
 	Handle<Array> args)

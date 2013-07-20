@@ -21,13 +21,13 @@ v8::Local<v8::String> ToV8Symbol(System::String^ value);
 
 System::Object^ ToCLRValue(v8::Handle<v8::Value> value);
 
-v8::Handle<v8::Value> ToV8Value(System::Object^ value);
-
 System::Object^ ChangeType(v8::Handle<v8::Value> value, System::Type^ type);
 
 System::Object^ ChangeType(v8::Handle<v8::Value> value, System::Type^ type, int& match);
 
 System::Object^ ChangeType(System::Object^ value, System::Type^ type, int& match);
+
+v8::Handle<v8::Value> ToV8Value(System::Object^ value);
 
 
 /*

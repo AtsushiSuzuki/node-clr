@@ -174,7 +174,6 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 
 ## TODO:
 - Unit test
-- Code comments
 - Better marshaling
   - `Object` => class with `DataContractAttribute`
   - `Buffer` or `ArrayBuffer` => `System.Byte[]`

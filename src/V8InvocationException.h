@@ -4,6 +4,7 @@
 #include "node-clr.h"
 
 
+// Exception that holds Javascript Error information
 [System::Serializable]
 public ref class V8InvocationException : public System::Exception
 {

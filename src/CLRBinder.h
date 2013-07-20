@@ -4,6 +4,7 @@
 #include "node-clr.h"
 
 
+// match type for type conversion/overload resolution
 enum {
 	INCOMPATIBLE = 0,
 	EXPLICIT_CONVERSION = 1,
@@ -11,24 +12,29 @@ enum {
 	EXACT = 3,
 };
 
+// provides reflective binding for CLR operations
 class CLRBinder
 {
 public:
+	// invoke constructor with arguments
 	static System::Object^ InvokeConstructor(
 		v8::Handle<v8::Value> typeName,
 		const v8::Arguments& args);
 
+	// invoke static or instance method (or property/event accessor)
 	static v8::Handle<v8::Value> InvokeMethod(
 		v8::Handle<v8::Value> typeName,
 		v8::Handle<v8::Value> name,
 		v8::Handle<v8::Value> target,
 		v8::Handle<v8::Value> args);
 
+	// get static/instance field value
 	static v8::Handle<v8::Value> GetField(
 		v8::Handle<v8::Value> typeName,
 		v8::Handle<v8::Value> name,
 		v8::Handle<v8::Value> target);
 
+	// set static/instance field value
 	static void SetField(
 		v8::Handle<v8::Value> typeName,
 		v8::Handle<v8::Value> name,
@@ -57,6 +63,9 @@ private:
 		System::Object^ target,
 		v8::Handle<v8::Value> value);
 
+	/*
+	 * overload resolution
+	 */
 	static System::Reflection::MethodBase^ SelectMethod(
 		array<System::Reflection::MethodBase^>^ methods,
 		v8::Handle<v8::Array> args);
