@@ -11,7 +11,7 @@ System::Object^ CLRBinder::InvokeConstructor(
 	Handle<Value> typeName,
 	const Arguments& args)
 {
-	auto type = CLRGetType(ToCLRString(typeName));
+	auto type = System::Type::GetType(ToCLRString(typeName));
 
 	auto arr = Array::New();
 	for (int i = 0; i < args.Length(); i++)
@@ -53,7 +53,7 @@ Handle<Value> CLRBinder::InvokeMethod(
 	Handle<Value> target,
 	Handle<Value> args)
 {
-	auto type = CLRGetType(ToCLRString(typeName));
+	auto type = System::Type::GetType(ToCLRString(typeName));
 
 	return InvokeMethod(
 		type,
@@ -109,7 +109,7 @@ Handle<Value> CLRBinder::GetField(
 	Handle<Value> name,
 	Handle<Value> target)
 {
-	auto type = CLRGetType(ToCLRString(typeName));
+	auto type = System::Type::GetType(ToCLRString(typeName));
 
 	return GetField(
 		type,
@@ -135,7 +135,7 @@ void CLRBinder::SetField(
 	Handle<Value> target,
 	Handle<Value> value)
 {
-	auto type = CLRGetType(ToCLRString(typeName));
+	auto type = System::Type::GetType(ToCLRString(typeName));
 
 	SetField(
 		type,

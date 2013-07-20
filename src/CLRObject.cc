@@ -47,7 +47,7 @@ System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 
 Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Function> initializer)
 {
-	auto type = CLRGetType(ToCLRString(typeName));
+	auto type = System::Type::GetType(ToCLRString(typeName));
 
 	auto data = Object::New();
 	data->Set(String::NewSymbol("type"), ToV8String(type->AssemblyQualifiedName));

@@ -17,6 +17,4 @@
 #include "V8Delegate.h"
 #include "V8InvocationException.h"
 
-System::Type^ CLRGetType(System::String^ name);
-
 #endif

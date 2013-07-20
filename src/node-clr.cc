@@ -180,7 +180,7 @@ class CLR
 			return scope.Close(Undefined());
 		}
 
-		auto type = CLRGetType(ToCLRString(args[0]));
+		auto type = System::Type::GetType(ToCLRString(args[0]));
 		auto isStatic = !args[1]->BooleanValue();
 		
 		auto obj = Object::New();
@@ -429,28 +429,24 @@ public:
 		exports->Set(String::NewSymbol("getField"), FunctionTemplate::New(GetField)->GetFunction());
 		exports->Set(String::NewSymbol("setField"), FunctionTemplate::New(SetField)->GetFunction());
 		exports->Set(String::NewSymbol("isCLRObject"), FunctionTemplate::New(IsCLRObject)->GetFunction());
+
+		System::AppDomain::CurrentDomain->AssemblyResolve += gcnew System::ResolveEventHandler(
+			&CLR::ResolveAssembly);
+	}
+
+private:
+	static Assembly^ ResolveAssembly(System::Object^ sender, System::ResolveEventArgs^ ea)
+	{
+		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
+		{
+			if (assembly->FullName == ea->Name)
+			{
+				return assembly;
+			}
+		}
+
+		return nullptr;
 	}
 };
 
 NODE_MODULE(clr, CLR::Init);
-
-
-System::Type^ CLRGetType(System::String^ name)
-{
-	auto m = Regex::Match(name, "^([^,]*), (.*)$");
-	if (m->Success)
-	{
-		auto typeName = m->Groups[1]->Value;
-		auto assemblyName = m->Groups[2]->Value;
-
-		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
-		{
-			if (assemblyName == assembly->FullName)
-			{
-				return assembly->GetType(typeName, true);
-			}
-		}
-	}
-
-	return System::Type::GetType(name, true);
-}
