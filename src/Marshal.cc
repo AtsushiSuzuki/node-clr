@@ -70,7 +70,7 @@ System::Object^ ChangeType(
 	int& match)
 {
 	// unwrap value
-	if (CLRObject::IsWrapped(value))
+	if (CLRObject::IsCLRObject(value))
 	{
 		return ChangeType(CLRObject::Unwrap(value), type, match);
 	}
@@ -224,18 +224,39 @@ System::Object^ ChangeType(
 				return str[0];
 			}
 		}
+		else if (System::Enum::typeid->IsAssignableFrom(type) &&
+			type != System::Enum::typeid)
+		{
+			try
+			{
+				match = IMPLICIT_CONVERSION;
+				return System::Enum::Parse(type, ToCLRString(value));
+			}
+			catch (System::Exception^)
+			{
+			}
+		}
 	}
 	else if (value->IsFunction())
 	{
+		auto func = Handle<Function>::Cast(value);
 		if (type->IsAssignableFrom(System::MulticastDelegate::typeid))
 		{
 			match = EXACT;
-			return V8Delegate::CreateDelegate(Handle<Function>::Cast(value));
+			return V8Delegate::CreateDelegate(func);
 		}
 		else if (System::Delegate::typeid->IsAssignableFrom(type))
 		{
 			match = EXACT;
-			return V8Delegate::CreateDelegate(Handle<Function>::Cast(value), type);
+			return V8Delegate::CreateDelegate(func, type);
+		}
+		else if (type->IsAssignableFrom(System::Type::typeid) &&
+			CLRObject::IsCLRConstructor(func))
+		{
+			auto constructorType = func->GetHiddenValue(String::NewSymbol("clr::type"));
+			
+			match = EXACT;
+			return System::Type::GetType(ToCLRString(constructorType));
 		}
 	}
 	else if (value->IsArray())
@@ -305,20 +326,6 @@ System::Object^ ChangeType(
 		if (type->IsAssignableFrom(ExpandoObject::typeid))
 		{
 			return to;
-		}
-	}
-
-	if (System::Enum::typeid->IsAssignableFrom(type) &&
-		type != System::Enum::typeid &&
-		value->IsString())
-	{
-		try
-		{
-			match = IMPLICIT_CONVERSION;
-			return System::Enum::Parse(type, ToCLRString(value));
-		}
-		catch (System::Exception^)
-		{
 		}
 	}
 

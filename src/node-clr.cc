@@ -309,7 +309,7 @@ class CLR
 		if (args.Length() != 4 ||
 			!args[0]->IsString() ||
 			!args[1]->IsString() ||
-			(!CLRObject::IsWrapped(args[2]) && args[2]->BooleanValue() != false) ||
+			(!CLRObject::IsCLRObject(args[2]) && args[2]->BooleanValue() != false) ||
 			!args[3]->IsArray())
 		{
 			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
@@ -348,7 +348,7 @@ class CLR
 		if (args.Length() != 3 ||
 			!args[0]->IsString() ||
 			!args[1]->IsString() ||
-			(!CLRObject::IsWrapped(args[2]) && args[2]->BooleanValue() != false))
+			(!CLRObject::IsCLRObject(args[2]) && args[2]->BooleanValue() != false))
 		{
 			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
 			return scope.Close(Undefined());
@@ -385,7 +385,7 @@ class CLR
 		if (args.Length() != 4 ||
 			!args[0]->IsString() ||
 			!args[1]->IsString() ||
-			(!CLRObject::IsWrapped(args[2]) && args[2]->BooleanValue() != false) ||
+			(!CLRObject::IsCLRObject(args[2]) && args[2]->BooleanValue() != false) ||
 			!args[3].IsEmpty())
 		{
 			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
@@ -424,7 +424,7 @@ class CLR
 			return scope.Close(Undefined());
 		}
 
-		return scope.Close(Boolean::New(CLRObject::IsWrapped(args[0])));
+		return scope.Close(Boolean::New(CLRObject::IsCLRObject(args[0])));
 	}
 	
 	// resolve assemblies which is loaded by reflection

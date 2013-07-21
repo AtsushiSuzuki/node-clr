@@ -58,7 +58,7 @@ Handle<Value> CLRBinder::InvokeMethod(
 	return InvokeMethod(
 		type,
 		ToCLRString(name),
-		(CLRObject::IsWrapped(target))
+		(CLRObject::IsCLRObject(target))
 			? CLRObject::Unwrap(target)
 			: nullptr,
 		Handle<Array>::Cast(args));
@@ -114,7 +114,7 @@ Handle<Value> CLRBinder::GetField(
 	return GetField(
 		type,
 		ToCLRString(name),
-		(CLRObject::IsWrapped(target))
+		(CLRObject::IsCLRObject(target))
 			? CLRObject::Unwrap(target)
 			: nullptr);
 }
@@ -140,7 +140,7 @@ void CLRBinder::SetField(
 	SetField(
 		type,
 		ToCLRString(name),
-		(CLRObject::IsWrapped(target))
+		(CLRObject::IsCLRObject(target))
 			? CLRObject::Unwrap(target)
 			: nullptr,
 		value);

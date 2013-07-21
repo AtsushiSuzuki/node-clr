@@ -11,6 +11,24 @@ void CLRObject::Init()
 	objectTemplate_->SetInternalFieldCount(1);
 }
 
+bool CLRObject::IsCLRObject(Handle<Value> value)
+{
+	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
+	{
+		auto type = value->ToObject()->GetHiddenValue(String::NewSymbol("clr::type"));
+		return !type.IsEmpty();
+	}
+}
+
+bool CLRObject::IsCLRConstructor(Handle<Value> value)
+{
+	if (!value.IsEmpty() && value->IsFunction())
+	{
+		auto type = value->ToObject()->GetHiddenValue(String::NewSymbol("clr::type"));
+		return !type.IsEmpty();
+	}
+}
+
 Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 {
 	auto wrapper = new CLRObject(value);
@@ -37,18 +55,9 @@ Handle<Object> CLRObject::Wrap(System::Object^ value)
 	return Wrap(obj, value);
 }
 
-bool CLRObject::IsWrapped(Handle<Value> obj)
-{
-	if (!obj.IsEmpty() && obj->IsObject())
-	{
-		auto type = obj->ToObject()->GetHiddenValue(String::NewSymbol("clr::type"));
-		return !type.IsEmpty();
-	}
-}
-
 System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 {
-	if (!IsWrapped(obj))
+	if (!IsCLRObject(obj))
 	{
 		throw gcnew System::ArgumentException("argument \"obj\" is not CLR-wrapped object");
 	}

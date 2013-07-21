@@ -179,7 +179,6 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - Better marshaling
   - `Object` => class with `DataContractAttribute`
   - `Buffer` or `ArrayBuffer` => `System.Byte[]`
-  - CLR types => `System.Type`
   - handle cyclic reference
 - New Event api, resembles to EventEmitter
 - Prototype chain which reflects CLR inheritance
