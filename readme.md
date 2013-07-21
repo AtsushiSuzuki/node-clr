@@ -87,6 +87,13 @@ CLR type also contains static members.
 The code above invokes CLR static property getter [`DateTime.Now`](http://msdn.microsoft.com/ja-jp/library/system.datetime.now.aspx).
 
 
+### type.of([type])
+
+Bind generic parameters to type and returns bound CLR type.
+
+	var list = new (System.Collections.Generic.List.of(System.Int32))();
+
+
 ## CLR objects
 
 - {Object}
@@ -182,7 +189,7 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
   - handle cyclic reference
 - New Event api, resembles to EventEmitter
 - Prototype chain which reflects CLR inheritance
-- Generics
+- Generic method
 - cast
 - valueOf (explicit conversion from wrapped CLR object to javascript types)
 - Async invocation
