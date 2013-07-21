@@ -205,6 +205,25 @@ System::Object^ ChangeType(
 			match = EXACT;
 			return ToCLRString(value);
 		}
+		else if (type->IsAssignableFrom(System::Char::typeid))
+		{
+			auto str = ToCLRString(value);
+			if (str->Length == 1)
+			{
+				match = IMPLICIT_CONVERSION;
+				return str[0];
+			}
+			else if (str->Length == 0)
+			{
+				match = EXPLICIT_CONVERSION;
+				return static_cast<System::Char>(0);
+			}
+			else
+			{
+				match = EXPLICIT_CONVERSION;
+				return str[0];
+			}
+		}
 	}
 	else if (value->IsFunction())
 	{
