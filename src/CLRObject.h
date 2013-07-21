@@ -12,7 +12,11 @@ public:
 
 	static bool IsCLRObject(v8::Handle<v8::Value> obj);
 
+	static v8::Handle<v8::Value> GetType(v8::Handle<v8::Value> value);
+
 	static bool IsCLRConstructor(v8::Handle<v8::Value> value);
+
+	static v8::Handle<v8::Value> TypeOf(v8::Handle<v8::Value> value);
 
 	static v8::Handle<v8::Object> Wrap(v8::Handle<v8::Object> obj, System::Object^ value);
 

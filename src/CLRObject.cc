@@ -15,9 +15,18 @@ bool CLRObject::IsCLRObject(Handle<Value> value)
 {
 	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
 	{
-		auto type = value->ToObject()->GetHiddenValue(String::NewSymbol("clr::type"));
+		auto type = Handle<Object>::Cast(value)->GetHiddenValue(String::NewSymbol("clr::type"));
 		return !type.IsEmpty();
 	}
+	else
+	{
+		return false;
+	}
+}
+
+Handle<Value> CLRObject::GetType(Handle<Value> value)
+{
+	return Handle<Object>::Cast(value)->GetHiddenValue(String::NewSymbol("clr::type"));
 }
 
 bool CLRObject::IsCLRConstructor(Handle<Value> value)
@@ -27,6 +36,15 @@ bool CLRObject::IsCLRConstructor(Handle<Value> value)
 		auto type = value->ToObject()->GetHiddenValue(String::NewSymbol("clr::type"));
 		return !type.IsEmpty();
 	}
+	else
+	{
+		return false;
+	}
+}
+
+Handle<Value> CLRObject::TypeOf(Handle<Value> value)
+{
+	return Handle<Object>::Cast(value)->GetHiddenValue(String::NewSymbol("clr::type"));
 }
 
 Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
@@ -41,10 +59,6 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 	obj->SetHiddenValue(
 		String::NewSymbol("clr::type"),
 		name);
-	obj->Set(
-		String::NewSymbol("clr::type"),
-		name,
-		(PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 
 	return obj;
 }
@@ -68,7 +82,7 @@ System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 
 Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Function> initializer)
 {
-	auto type = System::Type::GetType(ToCLRString(typeName));
+	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
 	auto tpl = FunctionTemplate::New(New);
 	tpl->SetClassName(ToV8String(type->Name));

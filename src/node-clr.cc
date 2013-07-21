@@ -183,7 +183,7 @@ class CLR
 			return scope.Close(Undefined());
 		}
 
-		auto type = System::Type::GetType(ToCLRString(args[0]));
+		auto type = System::Type::GetType(ToCLRString(args[0]), true);
 		auto isStatic = !args[1]->BooleanValue();
 		
 		auto obj = Object::New();
@@ -426,7 +426,49 @@ class CLR
 
 		return scope.Close(Boolean::New(CLRObject::IsCLRObject(args[0])));
 	}
+
+	static Handle<Value> GetType(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (args.Length() != 1 ||
+			!CLRObject::IsCLRObject(args[0]))
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		return scope.Close(CLRObject::GetType(args[0]));
+	}
+
+	static Handle<Value> IsCLRConstructor(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (args.Length() != 1 ||
+			args[0].IsEmpty())
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+		
+		return scope.Close(CLRObject::TypeOf(args[0]));
+	}
 	
+	static Handle<Value> TypeOf(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (args.Length() != 1 ||
+			!CLRObject::IsCLRConstructor(args[0]))
+		{
+			ThrowException(Exception::TypeError(String::New("Arguments does not match it's parameter list")));
+			return scope.Close(Undefined());
+		}
+
+		return scope.Close(CLRObject::TypeOf(args[0]));
+	}
+
 	// resolve assemblies which is loaded by reflection
 	static Assembly^ ResolveAssembly(System::Object^ sender, System::ResolveEventArgs^ ea)
 	{
@@ -455,6 +497,9 @@ public:
 		exports->Set(String::NewSymbol("getField"), FunctionTemplate::New(GetField)->GetFunction());
 		exports->Set(String::NewSymbol("setField"), FunctionTemplate::New(SetField)->GetFunction());
 		exports->Set(String::NewSymbol("isCLRObject"), FunctionTemplate::New(IsCLRObject)->GetFunction());
+		exports->Set(String::NewSymbol("getType"), FunctionTemplate::New(GetType)->GetFunction());
+		exports->Set(String::NewSymbol("isCLRConstructor"), FunctionTemplate::New(IsCLRConstructor)->GetFunction());
+		exports->Set(String::NewSymbol("typeOf"), FunctionTemplate::New(TypeOf)->GetFunction());
 
 		System::AppDomain::CurrentDomain->AssemblyResolve += gcnew System::ResolveEventHandler(
 			&CLR::ResolveAssembly);

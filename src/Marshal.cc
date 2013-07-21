@@ -253,10 +253,8 @@ System::Object^ ChangeType(
 		else if (type->IsAssignableFrom(System::Type::typeid) &&
 			CLRObject::IsCLRConstructor(func))
 		{
-			auto constructorType = func->GetHiddenValue(String::NewSymbol("clr::type"));
-			
 			match = EXACT;
-			return System::Type::GetType(ToCLRString(constructorType));
+			return System::Type::GetType(ToCLRString(CLRObject::TypeOf(value)), true);
 		}
 	}
 	else if (value->IsArray())
@@ -308,7 +306,7 @@ System::Object^ ChangeType(
 			auto data = node::Buffer::Data(value);
 
 			auto arr = gcnew array<System::Byte>((int)length);
-			Marshal::Copy((System::IntPtr)data, arr, 0, length);
+			Marshal::Copy((System::IntPtr)data, arr, 0, (int)length);
 
 			match = EXACT;
 			return arr;
