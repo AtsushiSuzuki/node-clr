@@ -273,6 +273,8 @@ class CLR
 					access->Set(Number::New(index++), String::New("set"));
 				}
 				desc->Set(String::NewSymbol("access"), access);
+
+				desc->Set(String::NewSymbol("indexed"), Boolean::New(0 < pi->GetIndexParameters().Length));
 				
 				obj->Set(ToV8Symbol(member->Name), desc);
 			}

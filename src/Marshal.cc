@@ -281,6 +281,7 @@ System::Object^ ChangeType(
 
 		auto from = Handle<Array>::Cast(value);
 		auto to = System::Array::CreateInstance(elementType, from->Length());
+		match = EXACT;
 		for (int i = 0; i < (int)from->Length(); i++)
 		{
 			int m;
@@ -321,6 +322,7 @@ System::Object^ ChangeType(
 		auto to = (IDictionary<System::String^, System::Object^>^)(gcnew ExpandoObject());
 		
 		auto names = from->GetOwnPropertyNames();
+		match = EXACT;
 		for (int i = 0; i < (int)names->Length(); i++)
 		{
 			auto name = names->Get(i);

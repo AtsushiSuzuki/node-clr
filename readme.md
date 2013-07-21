@@ -125,6 +125,17 @@ CLR properties/fields are exposed as object's getter or setter function.
 	var now = System.DateTime.Now;
 
 
+## CLR indexed properties
+
+### obj.get([index])
+
+Get object's default indexed property
+
+	var a = 
+
+### obj.set([index], value)
+
+
 ## CLR events
 
 - {Object}
@@ -193,5 +204,4 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - cast
 - valueOf (explicit conversion from wrapped CLR object to javascript types)
 - Async invocation
-- Indexed property
 - Compiler API
