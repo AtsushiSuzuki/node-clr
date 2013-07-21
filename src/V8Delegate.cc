@@ -36,10 +36,10 @@ System::Delegate^ V8Delegate::CreateDelegate(Handle<Function> func, System::Type
 	if (mi->ReturnType == System::Void::typeid &&
 		params->Length == 0)
 	{
-		auto action = V8Delegate::typeid->GetMethod(
+		auto method = V8Delegate::typeid->GetMethod(
 			"Action0",
 			BindingFlags::NonPublic | BindingFlags::Instance);
-		return action->CreateDelegate(type, thiz);
+		return method->CreateDelegate(type, thiz);
 	}
 	else if (mi->ReturnType == System::Void::typeid)
 	{
@@ -49,10 +49,10 @@ System::Delegate^ V8Delegate::CreateDelegate(Handle<Function> func, System::Type
 			types[i] = params[i]->ParameterType;
 		}
 
-		auto action = V8Delegate::typeid->GetMethod(
+		auto method = V8Delegate::typeid->GetMethod(
 			"Action" + params->Length.ToString(),
 			BindingFlags::NonPublic | BindingFlags::Instance);
-		return action->MakeGenericMethod(types)->CreateDelegate(type, thiz);
+		return method->MakeGenericMethod(types)->CreateDelegate(type, thiz);
 	}
 	else
 	{
@@ -63,8 +63,10 @@ System::Delegate^ V8Delegate::CreateDelegate(Handle<Function> func, System::Type
 		}
 		types[params->Length] = mi->ReturnType;
 
-		auto func = V8Delegate::typeid->GetMethod("Func" + params->Length.ToString());
-		return func->MakeGenericMethod(types)->CreateDelegate(type, thiz);
+		auto method = V8Delegate::typeid->GetMethod(
+			"Func" + params->Length.ToString(),
+			BindingFlags::NonPublic | BindingFlags::Instance);
+		return method->MakeGenericMethod(types)->CreateDelegate(type, thiz);
 	}
 }
 
