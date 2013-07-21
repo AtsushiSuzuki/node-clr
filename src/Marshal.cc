@@ -300,6 +300,20 @@ System::Object^ ChangeType(
 			return to;
 		}
 	}
+	else if (node::Buffer::HasInstance(value))
+	{
+		if (type->IsAssignableFrom(array<System::Byte>::typeid))
+		{
+			auto length = node::Buffer::Length(value);
+			auto data = node::Buffer::Data(value);
+
+			auto arr = gcnew array<System::Byte>((int)length);
+			Marshal::Copy((System::IntPtr)data, arr, 0, length);
+
+			match = EXACT;
+			return arr;
+		}
+	}
 	else
 	{
 		// TODO: handle DataContractAttribute

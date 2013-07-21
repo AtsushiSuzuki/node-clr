@@ -169,7 +169,7 @@ MethodBase^ CLRBinder::SelectMethod(
 {
 	if (methods->Length == 0)
 	{
-		throw gcnew System::MissingMethodException();
+		throw gcnew System::MissingMethodException(); // TODO: message
 	}
 
 	auto scores = gcnew array<int>(methods->Length);
@@ -181,7 +181,7 @@ MethodBase^ CLRBinder::SelectMethod(
 	int max = Enumerable::Max(scores);
 	if (max < IMPLICIT_CONVERSION)
 	{
-		throw gcnew System::MissingMethodException();
+		throw gcnew System::MissingMethodException(); // TODO: message
 	}
 
 	auto canditates = gcnew List<MethodBase^>();
@@ -211,7 +211,7 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 	}
 	else
 	{
-		throw gcnew System::MissingMethodException();
+		throw gcnew System::MissingMethodException(); // TODO: message
 	}
 }
 

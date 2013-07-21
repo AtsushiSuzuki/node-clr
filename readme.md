@@ -151,6 +151,7 @@ V8 => CLR:
 - `String` => `System.String` or `System.Char` or Enums
 - `Function` => Any delegate type or `System.Func<System.Object[], System.Object>`
 - `Array` => Any type of array or `System.Object[]`
+- `Buffer` => `System.Byte[]`
 - `object` => `System.Dynamic.ExpandoObject`
 
 CLR => V8:
@@ -178,7 +179,6 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - Unit test
 - Better marshaling
   - `Object` => class with `DataContractAttribute`
-  - `Buffer` or `ArrayBuffer` => `System.Byte[]`
   - handle cyclic reference
 - New Event api, resembles to EventEmitter
 - Prototype chain which reflects CLR inheritance
