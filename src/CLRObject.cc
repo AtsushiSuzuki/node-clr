@@ -16,11 +16,16 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 	auto wrapper = new CLRObject(value);
 	wrapper->node::ObjectWrap::Wrap(obj);
 	
+	auto name = (value != nullptr)
+		? ToV8String(value->GetType()->AssemblyQualifiedName)
+		: ToV8String(System::Object::typeid->AssemblyQualifiedName);
+
+	obj->SetHiddenValue(
+		String::NewSymbol("clr::type"),
+		name);
 	obj->Set(
-		String::NewSymbol("_clrType"),
-		(value != nullptr)
-			? ToV8String(value->GetType()->AssemblyQualifiedName)
-			: ToV8String(System::Object::typeid->AssemblyQualifiedName),
+		String::NewSymbol("clr::type"),
+		name,
 		(PropertyAttribute)(ReadOnly | DontEnum | DontDelete));
 
 	return obj;
@@ -34,9 +39,11 @@ Handle<Object> CLRObject::Wrap(System::Object^ value)
 
 bool CLRObject::IsWrapped(Handle<Value> obj)
 {
-	return !obj.IsEmpty() &&
-		obj->IsObject() &&
-		obj->ToObject()->Has(String::NewSymbol("_clrType"));
+	if (!obj.IsEmpty() && obj->IsObject())
+	{
+		auto type = obj->ToObject()->GetHiddenValue(String::NewSymbol("clr::type"));
+		return !type.IsEmpty();
+	}
 }
 
 System::Object^ CLRObject::Unwrap(Handle<Value> obj)
@@ -54,15 +61,15 @@ Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Fun
 {
 	auto type = System::Type::GetType(ToCLRString(typeName));
 
-	auto data = Object::New();
-	data->Set(String::NewSymbol("type"), ToV8String(type->AssemblyQualifiedName));
-	data->Set(String::NewSymbol("initializer"), initializer);
-
-	auto tpl = FunctionTemplate::New(New, data);
+	auto tpl = FunctionTemplate::New(New);
 	tpl->SetClassName(ToV8String(type->Name));
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
+	
+	auto ctor = tpl->GetFunction();
+	ctor->SetHiddenValue(String::NewSymbol("clr::type"), ToV8String(type->AssemblyQualifiedName));
+	ctor->SetHiddenValue(String::NewSymbol("clr::initializer"), initializer);
 
-	return tpl->GetFunction();
+	return ctor;
 }
 
 Handle<Value> CLRObject::New(const Arguments& args)
@@ -75,7 +82,8 @@ Handle<Value> CLRObject::New(const Arguments& args)
 		return scope.Close(Undefined());
 	}
 
-	auto typeName = args.Data()->ToObject()->Get(String::NewSymbol("type"));
+	auto ctor = args.Callee();
+	auto typeName = ctor->GetHiddenValue(String::NewSymbol("clr::type"));
 	System::Object^ value;
 	try
 	{
@@ -89,7 +97,7 @@ Handle<Value> CLRObject::New(const Arguments& args)
 	
 	Wrap(args.This(), value);
 
-	auto initializer = args.Data()->ToObject()->Get(String::NewSymbol("initializer"));
+	auto initializer = ctor->GetHiddenValue(String::NewSymbol("clr::initializer"));
 	if (!initializer.IsEmpty())
 	{
 		std::vector<Handle<Value> > params;
