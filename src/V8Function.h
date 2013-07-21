@@ -19,7 +19,7 @@ public:
 private:
 	unsigned int threadId;
 
-	v8::Persistent<v8::Function> func;
+	v8::Persistent<v8::Function> func_;
 
 	System::Object^ InvokeImpl(array<System::Object^>^ args);
 

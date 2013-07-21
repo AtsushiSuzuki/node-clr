@@ -23,9 +23,9 @@ public:
 private:
 	static v8::Handle<v8::Value> New(const v8::Arguments& args);
 
-	static v8::Persistent<v8::ObjectTemplate> tpl;
+	static v8::Persistent<v8::ObjectTemplate> objectTemplate_;
 
-	gcroot<System::Object^> value;
+	gcroot<System::Object^> value_;
 
 	CLRObject(System::Object^ value);
 

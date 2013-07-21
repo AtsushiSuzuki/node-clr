@@ -15,7 +15,7 @@ public:
 	static System::Delegate^ CreateDelegate(v8::Handle<v8::Function> func, System::Type^ type);
 
 private:
-	V8Function* pFunc;
+	V8Function* func_;
 
 	V8Delegate(v8::Handle<v8::Function> func);
 	

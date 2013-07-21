@@ -5,19 +5,19 @@ using namespace System::Reflection;
 
 
 V8Delegate::V8Delegate(Handle<Function> function)
-	: pFunc(new V8Function(function))
+	: func_(new V8Function(function))
 {
 }
 
 V8Delegate::~V8Delegate()
 {
 	// TODO: is this safe?
-	delete pFunc;
+	delete func_;
 }
 
 System::Object^ V8Delegate::Invoke(array<System::Object^>^ args)
 {
-	return this->pFunc->Invoke(args);
+	return this->func_->Invoke(args);
 }
 
 System::Delegate^ V8Delegate::CreateDelegate(Handle<Function> func)

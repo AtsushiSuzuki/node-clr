@@ -4,7 +4,7 @@ using namespace v8;
 using namespace System::Reflection;
 
 V8Function::V8Function(Handle<Function> function)
-	: threadId(uv_thread_self()), func(Persistent<Function>::New(function))
+	: threadId(uv_thread_self()), func_(Persistent<Function>::New(function))
 {
 }
 
@@ -38,7 +38,7 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 	}
 
 	TryCatch trycatch;
-	auto result = this->func->Call(
+	auto result = this->func_->Call(
 		Context::GetCurrent()->Global(),
 		(int)params.size(),
 		(0 < params.size())

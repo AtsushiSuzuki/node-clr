@@ -3,12 +3,12 @@
 using namespace v8;
 
 
-Persistent<ObjectTemplate> CLRObject::tpl;
+Persistent<ObjectTemplate> CLRObject::objectTemplate_;
 
 void CLRObject::Init()
 {
-	tpl = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
-	tpl->SetInternalFieldCount(1);
+	objectTemplate_ = Persistent<ObjectTemplate>::New(ObjectTemplate::New());
+	objectTemplate_->SetInternalFieldCount(1);
 }
 
 Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
@@ -28,7 +28,7 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 
 Handle<Object> CLRObject::Wrap(System::Object^ value)
 {
-	auto obj = tpl->NewInstance();
+	auto obj = objectTemplate_->NewInstance();
 	return Wrap(obj, value);
 }
 
@@ -47,7 +47,7 @@ System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 	}
 
 	auto wrapper = node::ObjectWrap::Unwrap<CLRObject>(obj->ToObject());
-	return wrapper->value;
+	return wrapper->value_;
 }
 
 Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Function> initializer)
@@ -104,7 +104,7 @@ Handle<Value> CLRObject::New(const Arguments& args)
 }
 
 CLRObject::CLRObject(System::Object^ value)
-	: value(value)
+	: value_(value)
 {
 }
 
