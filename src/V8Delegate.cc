@@ -5,14 +5,13 @@ using namespace System::Reflection;
 
 
 V8Delegate::V8Delegate(Handle<Function> function)
-	: func_(new V8Function(function))
+	: func_(V8Function::New(function))
 {
 }
 
 V8Delegate::~V8Delegate()
 {
-	// TODO: is this safe?
-	delete func_;
+	this->func_->Destroy();
 }
 
 System::Object^ V8Delegate::Invoke(array<System::Object^>^ args)
