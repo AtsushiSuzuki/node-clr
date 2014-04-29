@@ -56,7 +56,7 @@ Initialize CLR rutime with given options. Returns global `namespace`.
 - `options` {Object}
 	- `assemblies` {Array} - An array of assembly name (partial name, full name or absolute path to .dll/.exe).
 	  Defaults to `['mscorlib', 'System', 'System.Core']`.
-	- `global` {Boolean} - if `true`, CLR global namespace objects are injected into javascript global object.
+	- `global` {boolean} - if `true`, CLR global namespace objects are injected into javascript global object.
 	  Defaults to `true`.
 
 
@@ -164,9 +164,9 @@ Remove javascript event handler from event.
 V8 => CLR:
 
 - `null` or `undefined` => `null`
-- `Boolean` => `System.Boolean`
-- `Nubmer` => Any numeric type or `System.Double`
-- `String` => `System.String` or `System.Char` or Enums
+- `boolean` => `System.Boolean`
+- `nubmer` => Any numeric type or `System.Double`
+- `string` => `System.String` or `System.Char` or Enums
 - `Function` => Any delegate type or `System.Func<System.Object[], System.Object>`
 - `Array` => Any type of array or `System.Object[]`
 - `Buffer` => `System.Byte[]`
@@ -175,9 +175,9 @@ V8 => CLR:
 CLR => V8:
 
 - `null` => `null`
-- `System.Boolean` => `Boolean`
-- Any numberic type excepts System.Decimal => `Number`
-- `System.String` or `System.Char` => `String`
+- `System.Boolean` => `boolean`
+- Any numberic type excepts System.Decimal => `number`
+- `System.String` or `System.Char` => `string`
 - Any other types => CLR wrapped object
 
 
