@@ -13,6 +13,7 @@ V8Function::V8Function(Handle<Function> func)
 	: threadId(uv_thread_self()), function(Persistent<Function>::New(func)), terminate(false)
 {
 	uv_async_init(uv_default_loop(), &this->async, &V8Function::AsyncCallback);
+	uv_unref((uv_handle_t*)&this->async);
 	this->async.data = this;
 	uv_mutex_init(&this->lock);
 }
