@@ -78,6 +78,8 @@ System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 
 	uv_async_send(&this->async);
 	uv_sem_wait(&ctx.completed);
+
+	uv_sem_destroy(&ctx.completed);
 	
 	if (static_cast<System::Exception^>(ctx.exception) != nullptr)
 	{
