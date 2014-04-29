@@ -12,14 +12,15 @@ private:
 		gcroot<array<System::Object^>^> args;
 		gcroot<System::Object^> result;
 		gcroot<System::Exception^> exception;
+		uv_sem_t completed;
 	};
 
 private:
 	unsigned int threadId;
 	v8::Persistent<v8::Function> function;
 	uv_async_t async;
-	uv_sem_t semaphore;
-	std::vector<InvocationContext*> invocations;
+	uv_mutex_t lock;
+	std::queue<InvocationContext*> invocations;
 	bool terminate;
 
 public:

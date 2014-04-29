@@ -10,11 +10,11 @@ V8Function* V8Function::New(Handle<Function> func)
 }
 
 V8Function::V8Function(Handle<Function> func)
-	: threadId(uv_thread_self()), function(Persistent<Function>::New(func)), invocations(), terminate(false)
+	: threadId(uv_thread_self()), function(Persistent<Function>::New(func)), terminate(false)
 {
 	uv_async_init(uv_default_loop(), &this->async, &V8Function::AsyncCallback);
 	this->async.data = this;
-	uv_sem_init(&this->semaphore, 0);
+	uv_mutex_init(&this->lock);
 }
 
 System::Object^ V8Function::Invoke(array<System::Object^>^ args)
@@ -38,7 +38,7 @@ void V8Function::Destroy()
 V8Function::~V8Function()
 {
 	uv_close((uv_handle_t*)(&this->async), nullptr);
-	uv_sem_destroy(&this->semaphore);
+	uv_mutex_destroy(&this->lock);
 }
 
 System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
@@ -69,11 +69,15 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 {
 	InvocationContext ctx = { args };
-	// TODO: lock
-	this->invocations.push_back(&ctx);
+
+	uv_sem_init(&ctx.completed, 0);
+
+	uv_mutex_lock(&this->lock);
+	this->invocations.push(&ctx);
+	uv_mutex_unlock(&this->lock);
 
 	uv_async_send(&this->async);
-	uv_sem_wait(&this->semaphore);
+	uv_sem_wait(&ctx.completed);
 	
 	if (static_cast<System::Exception^>(ctx.exception) != nullptr)
 	{
@@ -88,25 +92,36 @@ System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 void V8Function::AsyncCallback(uv_async_t* handle, int status)
 {
 	auto thiz = (V8Function*)handle->data;
-	// TODO: lock
-	std::vector<InvocationContext*> invocations(thiz->invocations);
-	thiz->invocations.clear();
 
-	for (auto it = invocations.begin(); it != invocations.end(); it++)
+	do
 	{
+		uv_mutex_lock(&thiz->lock);
+		auto ctx = thiz->invocations.front();
+		thiz->invocations.pop();
+		uv_mutex_unlock(&thiz->lock);
+
 		try
 		{
-			(*it)->result = thiz->InvokeImpl((*it)->args);
+			ctx->result = thiz->InvokeImpl(ctx->args);
 		}
 		catch (System::Exception^ ex)
 		{
-			(*it)->exception = ex;
+			ctx->exception = ex;
 		}
-		uv_sem_post(&thiz->semaphore);
-	}
+		uv_sem_post(&ctx->completed);
 
-	if (thiz->terminate)
-	{
-		delete thiz;
-	}
+		uv_mutex_lock(&thiz->lock);
+		auto rest = thiz->invocations.size();
+		uv_mutex_unlock(&thiz->lock);
+		if (0 < rest)
+		{
+			// continue;
+			uv_async_send(&thiz->async);
+			break;
+		}
+		else if (rest == 0 && thiz->terminate)
+		{
+			delete thiz;
+		}
+	} while (false);
 }

@@ -2,6 +2,7 @@
 #define NODE_CLR_H_
 
 #include <vector>
+#include <queue>
 #include <vcclr.h>
 #include <v8.h>
 #include <node.h>
