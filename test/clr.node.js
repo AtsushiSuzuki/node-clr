@@ -1,6 +1,6 @@
 var assert = require('assert');
 var _ = require('underscore');
-var clr = require('../build/Release/clr');
+var clr = require('bindings')('clr.node');
 
 describe('clr.node', function () {
 

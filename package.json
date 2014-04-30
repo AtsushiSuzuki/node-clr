@@ -12,6 +12,7 @@
     "install": "node-gyp rebuild"
   },
   "dependencies": {
+    "bindings": "*",
     "underscore": "*"
   },
   "devDependencies": {

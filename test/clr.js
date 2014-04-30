@@ -100,4 +100,19 @@ describe('clr', function () {
       done();
     }, 100);
   });
+  
+  it('async callback should really work', function (done) {
+    var ns = clr.init({ global: false });
+    
+    var called = 0;
+    for (var i = 0; i < 200; i++) {
+      var t = new ns.System.Threading.Tasks.Task(function () { called++; });
+      t.Start();
+    }
+    
+    setTimeout(function () {
+      assert.strictEqual(called, 200);
+      done();
+    }, 1000);
+  });
 });
