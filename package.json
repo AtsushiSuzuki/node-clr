@@ -1,15 +1,14 @@
 {
   "name": "clr",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Node.js binding for .NET Framework API",
   "repository": {
     "type": "git",
     "url": "https://github.com/AtsushiSuzuki/node-clr"
   },
-  "main": "lib/clr",
+  "main": "lib/clr.js",
   "scripts": {
-    "test": "mocha",
-    "install": "node-gyp rebuild"
+    "test": "mocha"
   },
   "dependencies": {
     "bindings": "*",
@@ -19,7 +18,10 @@
     "mocha": "*"
   },
   "keywords": [".NET", "CLR", "Common Language Runtime", "API Bridge"],
-  "author": "Atsushi Suzuki",
-  "license": ["BSD", "WTFPLv2"],
+  "author": {
+    "name": "Atsushi Suzuki",
+    "email": "possibly.maybe.probably@gmail.com"
+  },
+  "license": ["ISC", "WTFPL"],
   "gypfile": true
 }
