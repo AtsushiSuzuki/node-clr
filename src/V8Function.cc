@@ -32,7 +32,10 @@ System::Object^ V8Function::Invoke(array<System::Object^>^ args)
 
 void V8Function::Destroy()
 {
+	uv_mutex_lock(&this->lock);
 	this->terminate = true;
+	uv_mutex_unlock(&this->lock);
+
 	uv_async_send(&this->async);
 }
 
@@ -96,13 +99,17 @@ void V8Function::AsyncCallback(uv_async_t* handle, int status)
 {
 	auto thiz = (V8Function*)handle->data;
 
-	do
+	InvocationContext* ctx = nullptr;
+	uv_mutex_lock(&thiz->lock);
+	if (0 < thiz->invocations.size())
 	{
-		uv_mutex_lock(&thiz->lock);
-		auto ctx = thiz->invocations.front();
+		ctx = thiz->invocations.front();
 		thiz->invocations.pop();
-		uv_mutex_unlock(&thiz->lock);
+	}
+	uv_mutex_unlock(&thiz->lock);
 
+	if (ctx != nullptr)
+	{
 		try
 		{
 			ctx->result = thiz->InvokeImpl(ctx->args);
@@ -112,19 +119,19 @@ void V8Function::AsyncCallback(uv_async_t* handle, int status)
 			ctx->exception = ex;
 		}
 		uv_sem_post(&ctx->completed);
+	}
 
-		uv_mutex_lock(&thiz->lock);
-		auto rest = thiz->invocations.size();
-		uv_mutex_unlock(&thiz->lock);
-		if (0 < rest)
-		{
-			// continue;
-			uv_async_send(&thiz->async);
-			break;
-		}
-		else if (rest == 0 && thiz->terminate)
-		{
-			delete thiz;
-		}
-	} while (false);
+	uv_mutex_lock(&thiz->lock);
+	auto rest = thiz->invocations.size();
+	auto terminate = thiz->terminate;
+	uv_mutex_unlock(&thiz->lock);
+
+	if (0 < rest)
+	{
+		uv_async_send(&thiz->async);
+	}
+	else if (rest == 0 && terminate)
+	{
+		delete thiz;
+	}
 }
