@@ -2,15 +2,18 @@
   "name": "clr",
   "version": "0.0.12",
   "description": "Node.js binding for .NET Framework API",
+  "keywords": [".NET", "CLR", "Common Language Runtime", "API Bridge"],
+  "author": {
+    "name": "Atsushi Suzuki",
+    "email": "possibly.maybe.probably@gmail.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/AtsushiSuzuki/node-clr"
   },
+  "license": ["ISC", "WTFPL"],
   "main": "lib/clr.js",
-  "scripts": {
-    "test": "mocha",
-    "prepublish": "(node-gyp --arch=ia32 rebuild && copy .\\build\\Release\\clr.node .\\compiled\\win32\\ia32\\clr.node) & (node-gyp --arch=x64 rebuild && copy .\\build\\Release\\clr.node .\\compiled\\win32\\x64\\clr.node) & node-gyp rebuild"
-  },
+  "os": ["win32"],
   "dependencies": {
     "bindings": "*",
     "underscore": "*"
@@ -18,11 +21,9 @@
   "devDependencies": {
     "mocha": "*"
   },
-  "keywords": [".NET", "CLR", "Common Language Runtime", "API Bridge"],
-  "author": {
-    "name": "Atsushi Suzuki",
-    "email": "possibly.maybe.probably@gmail.com"
-  },
-  "license": ["ISC", "WTFPL"],
-  "gypfile": true
+  "scripts": {
+    "test": "mocha",
+    "prepublish": "(node-gyp --arch=ia32 rebuild && copy .\\build\\Release\\clr.node .\\compiled\\win32\\ia32\\clr.node) & (node-gyp --arch=x64 rebuild && copy .\\build\\Release\\clr.node .\\compiled\\win32\\x64\\clr.node) & node-gyp rebuild",
+    "install": "node-gyp rebuild || echo \"build failed. using precompiled module but you may need VC redist (http://www.microsoft.com/en-us/download/details.aspx?id=30679).\""
+  }
 }
