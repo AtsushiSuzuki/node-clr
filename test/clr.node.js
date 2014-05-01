@@ -1,6 +1,13 @@
 var assert = require('assert');
 var _ = require('underscore');
-var clr = require('bindings')('clr.node');
+var clr = require('bindings')({
+  bindings: 'clr.node',
+  try: [
+    ['module_root', 'build', 'Debug', 'bindings'],
+    ['module_root', 'build', 'Release', 'bindings'],
+    ['module_root', 'compiled', 'platform', 'arch', 'bindings']
+  ]
+});
 
 describe('clr.node', function () {
 

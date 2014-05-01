@@ -8,7 +8,8 @@
   },
   "main": "lib/clr.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "prepublish": "(node-gyp --arch=ia32 rebuild && copy .\\build\\Release\\clr.node .\\compiled\\win32\\ia32\\clr.node) & (node-gyp --arch=x64 rebuild && copy .\\build\\Release\\clr.node .\\compiled\\win32\\x64\\clr.node) & node-gyp rebuild"
   },
   "dependencies": {
     "bindings": "*",
