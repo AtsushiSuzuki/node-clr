@@ -87,6 +87,16 @@ describe('clr', function () {
       assert.strictEqual(dt.ToString(), '1970/01/01 0:00:00');
     });
   });
+
+  describe('enums', function () {
+    it('should work', function () {
+      var ns = clr.init({ global: false });
+
+      var obj = ns.System.TypeCode.Boolean;
+      assert(typeof obj === 'object');
+      assert(clr.isCLRObject(obj));
+    });
+  });
   
   it('async callback should work', function (done) {
     var ns = clr.init({ global: false });
