@@ -454,7 +454,8 @@ Handle<Value> ToV8Value(System::Object^ value)
 		return Local<Value>::New(Null());
 	}
 
-	switch (System::Type::GetTypeCode(value->GetType()))
+	auto type = value->GetType();
+	switch (System::Type::GetTypeCode(type))
 	{
 	case System::TypeCode::Boolean:
 		return Boolean::New((System::Boolean)value);
@@ -470,7 +471,14 @@ Handle<Value> ToV8Value(System::Object^ value)
 	case System::TypeCode::Single:
 	case System::TypeCode::Double:
 	// case System::TypeCode::Decimal:
-		return Number::New(System::Convert::ToDouble(value));
+		if (System::Enum::typeid->IsAssignableFrom(type))
+		{
+			return CLRObject::Wrap(value);
+		}
+		else
+		{
+			return Number::New(System::Convert::ToDouble(value));
+		}
 
 	case System::TypeCode::Char:
 		return ToV8String(value->ToString());
