@@ -22,13 +22,13 @@ System::String^ ToCLRString(Handle<Value> value)
 Local<String> ToV8String(System::String^ value)
 {
 	pin_ptr<const wchar_t> ptr = PtrToStringChars(value);
-	return String::New((const uint16_t*)ptr);
+	return NanNew<String>((const uint16_t*)ptr);
 }
 
 Local<String> ToV8Symbol(System::String ^value)
 {
 	auto ptr = (const char *)(Marshal::StringToHGlobalAnsi(value)).ToPointer();
-	auto result = String::NewSymbol(ptr);
+	auto result = NanNew<String>(ptr);
 	Marshal::FreeHGlobal(System::IntPtr((void*)ptr));
 	return result;
 }
@@ -451,14 +451,14 @@ Handle<Value> ToV8Value(System::Object^ value)
 {
 	if (value == nullptr)
 	{
-		return Local<Value>::New(Null());
+		return NanNull();
 	}
 
 	auto type = value->GetType();
 	switch (System::Type::GetTypeCode(type))
 	{
 	case System::TypeCode::Boolean:
-		return Boolean::New((System::Boolean)value);
+		return NanNew<Boolean>((System::Boolean)value);
 
 	case System::TypeCode::SByte:
 	case System::TypeCode::Byte:
@@ -477,7 +477,7 @@ Handle<Value> ToV8Value(System::Object^ value)
 		}
 		else
 		{
-			return Number::New(System::Convert::ToDouble(value));
+			return NanNew<Number>(System::Convert::ToDouble(value));
 		}
 
 	case System::TypeCode::Char:
@@ -511,9 +511,9 @@ System::Exception^ ToCLRException(Handle<Value> ex)
 	{
 		auto obj = Handle<Object>::Cast(ex);
 		return gcnew V8InvocationException(
-			ToCLRString(obj->Get(String::NewSymbol("name"))),
-			ToCLRString(obj->Get(String::NewSymbol("message"))),
-			ToCLRString(obj->Get(String::NewSymbol("stack"))));
+			ToCLRString(obj->Get(NanNew<String>("name"))),
+			ToCLRString(obj->Get(NanNew<String>("message"))),
+			ToCLRString(obj->Get(NanNew<String>("stack"))));
 	}
 }
 
@@ -527,7 +527,7 @@ Local<Value> ToV8Error(System::Exception^ ex)
 		name = ex->Data["name"]->ToString();
 	}
 	err->Set(
-		String::NewSymbol("name"),
+		NanNew<String>("name"),
 		ToV8String(name));
 
 	auto stack = gcnew StringBuilder();
@@ -547,7 +547,7 @@ Local<Value> ToV8Error(System::Exception^ ex)
 	stack->Append(ex->StackTrace);
 	{
 		IEnumerable<System::String^>^ lines;
-		lines = Regex::Split(ToCLRString(err->Get(String::NewSymbol("stack"))), "\r?\n");
+		lines = Regex::Split(ToCLRString(err->Get(NanNew<String>("stack"))), "\r?\n");
 		lines = Enumerable::Skip(lines, 1);
 		for each (System::String^ line in lines)
 		{
@@ -555,7 +555,7 @@ Local<Value> ToV8Error(System::Exception^ ex)
 			stack->Append(line);
 		}
 	}
-	err->Set(String::NewSymbol("stack"), ToV8String(stack->ToString()));
+	err->Set(NanNew<String>("stack"), ToV8String(stack->ToString()));
 
 	return err;
 }

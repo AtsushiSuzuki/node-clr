@@ -27,7 +27,7 @@ public:
 	static v8::Local<v8::Function> CreateConstructor(v8::Handle<v8::String> typeName, v8::Handle<v8::Function> initializer);
 
 private:
-	static v8::Handle<v8::Value> New(const v8::Arguments& args);
+	static NAN_METHOD(New);
 
 	static v8::Persistent<v8::ObjectTemplate> objectTemplate_;
 

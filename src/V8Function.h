@@ -16,7 +16,7 @@ private:
 	};
 
 private:
-	unsigned int threadId;
+	uv_thread_t threadId;
 	v8::Persistent<v8::Function> function;
 	uv_async_t async;
 	uv_mutex_t lock;
@@ -32,7 +32,7 @@ private:
 	V8Function(v8::Handle<v8::Function> func);
 	System::Object^ InvokeImpl(array<System::Object^>^ args);
 	System::Object^ InvokeAsync(array<System::Object^>^ args);
-	static void AsyncCallback(uv_async_t* handle, int status);
+	static void AsyncCallback(uv_async_t* handle);
 	~V8Function();
 };
 

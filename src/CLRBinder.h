@@ -19,7 +19,7 @@ public:
 	// invoke constructor with arguments
 	static System::Object^ InvokeConstructor(
 		v8::Handle<v8::Value> typeName,
-		const v8::Arguments& args);
+		v8::Handle<v8::Array> args);
 
 	// invoke static or instance method (or property/event accessor)
 	static v8::Handle<v8::Value> InvokeMethod(

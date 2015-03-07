@@ -11,17 +11,26 @@
     "test": "mocha"
   },
   "dependencies": {
-    "bindings": "*",
-    "underscore": "*"
+    "bindings": "^1.2.1",
+    "nan": "^1.7.0",
+    "underscore": "^1.8.2"
   },
   "devDependencies": {
     "mocha": "*"
   },
-  "keywords": [".NET", "CLR", "Common Language Runtime", "API Bridge"],
+  "keywords": [
+    ".NET",
+    "CLR",
+    "Common Language Runtime",
+    "API Bridge"
+  ],
   "author": {
     "name": "Atsushi Suzuki",
     "email": "possibly.maybe.probably@gmail.com"
   },
-  "license": ["ISC", "WTFPL"],
+  "license": [
+    "ISC",
+    "WTFPL"
+  ],
   "gypfile": true
 }

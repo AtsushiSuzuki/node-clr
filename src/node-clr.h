@@ -6,7 +6,9 @@
 #include <vcclr.h>
 #include <v8.h>
 #include <node.h>
+#include <node_object_wrap.h>
 #include <node_buffer.h>
+#include <nan.h>
 
 #using <mscorlib.dll>
 #using <System.dll>

@@ -9,20 +9,24 @@ using namespace System::Reflection;
 
 System::Object^ CLRBinder::InvokeConstructor(
 	Handle<Value> typeName,
-	const Arguments& args)
+	Handle<Array> args)
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
-	auto arr = Array::New();
-	for (int i = 0; i < args.Length(); i++)
-	{
-		arr->Set(Number::New(i), args[i]);
-	}
-
-	return InvokeConstructor(
-		type,
-		arr);
+	return InvokeConstructor(type, args);
 }
+
+/*
+auto arr = Array::New();
+for (int i = 0; i < args.Length(); i++)
+{
+	arr->Set(Number::New(i), args[i]);
+}
+
+return InvokeConstructor(
+	type,
+	arr);
+*/
 
 System::Object^ CLRBinder::InvokeConstructor(
 	System::Type^ type,
@@ -96,7 +100,7 @@ Handle<Value> CLRBinder::InvokeMethod(
 	if (result == nullptr &&
 		method->ReturnType == System::Void::typeid)
 	{
-		return Undefined();
+		return NanUndefined();
 	}
 	else
 	{
@@ -288,9 +292,9 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 			i == (int)args->Length() - 1)
 		{
 			int score1;
-			auto arg1 = ChangeType(args->Get(Number::New(i)), params[i]->ParameterType, score1);
+			auto arg1 = ChangeType(args->Get(NanNew<Number>(i)), params[i]->ParameterType, score1);
 			int score2;
-			auto arg2 = ChangeType(args->Get(Number::New(i)), varArgsType, score2);
+			auto arg2 = ChangeType(args->Get(NanNew<Number>(i)), varArgsType, score2);
 
 			if (score1 >= score2)
 			{
@@ -308,14 +312,14 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 		else if (i < params->Length)
 		{
 			int s;
-			arguments[i] = ChangeType(args->Get(Number::New(i)), params[i]->ParameterType, s);
+			arguments[i] = ChangeType(args->Get(NanNew<Number>(i)), params[i]->ParameterType, s);
 
 			match = System::Math::Min(match, s);
 		}
 		else
 		{
 			int s;
-			auto arg =  ChangeType(args->Get(Number::New(i)), varArgsType, s);
+			auto arg =  ChangeType(args->Get(NanNew<Number>(i)), varArgsType, s);
 
 			System::Array^ arr;
 			if (arguments[arguments->Length - 1] == nullptr)

@@ -2,6 +2,9 @@
   "targets": [
     {
       "target_name": "clr",
+      "include_dirs": [
+      	"<!(node -e \"require('nan')\")"
+      ],
       "sources": [
         "binding.gyp",
         "package.json",
