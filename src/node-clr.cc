@@ -508,4 +508,6 @@ public:
 	}
 };
 
+#pragma managed(push, off)
 NODE_MODULE(clr, CLR::Init);
+#pragma managed(pop)
