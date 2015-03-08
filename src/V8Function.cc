@@ -10,7 +10,7 @@ V8Function* V8Function::New(Handle<Function> func)
 }
 
 V8Function::V8Function(Handle<Function> func)
-	: threadId(uv_thread_self()), terminate(false)
+	: threadId((uv_thread_t)uv_thread_self()), terminate(false)
 {
 	NanAssignPersistent(function, func);
 
@@ -22,7 +22,7 @@ V8Function::V8Function(Handle<Function> func)
 
 System::Object^ V8Function::Invoke(array<System::Object^>^ args)
 {
-	if (this->threadId == uv_thread_self())
+	if (this->threadId == (uv_thread_t)uv_thread_self())
 	{
 		return this->InvokeImpl(args);
 	}
