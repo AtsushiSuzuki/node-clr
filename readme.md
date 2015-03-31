@@ -4,48 +4,45 @@
 	# npm install clr
 	# node
 	
-	require('clr').init();
-	System.Console.WriteLine('Hello, {0}!', 'world');
-	
-	> 'Hello, world!'
-	
+	> require('clr').init();
+	> System.Console.WriteLine('Hello, {0}!', 'world');
+	'Hello, world!'
 
-	var now = new System.DateTime(2013, 7, 1);
-	now.ToString();
-	
-	> '2013/07/01 0:00:00'
+	> var now = new System.DateTime(2013, 7, 1);
+	> now.ToString();
+	'2013/07/01 0:00:00'
 
-
-	require('clr').init({ assemblies: [ 'System.Windows.Forms' ] });
-	with (System.Windows.Forms) {
-	  var f = new Form();
-	  
-	  var p = new FlowLayoutPanel();
-	  f.Controls.Add(p);
-	  
-	  var t = new TextBox();
-	  t.Text = 'world';
-	  p.Controls.Add(t);
-	  
-	  var b = new Button();
-	  b.Text = 'Greet';
-	  b.Click.add(function (thiz, ea) {
-	    console.log('clicked');
-	    MessageBox.Show('Hello, ' + t.Text + '!');
-	  });
-	  p.Controls.Add(b);
-	
-	  Application.Run(f);
-	}
+	> require('clr').init({ assemblies: [ 'System.Windows.Forms' ] });
+	> with (System.Windows.Forms) {
+	>   var f = new Form();
+	>   
+	>   var p = new FlowLayoutPanel();
+	>   f.Controls.Add(p);
+	>   
+	>   var t = new TextBox();
+	>   t.Text = 'world';
+	>   p.Controls.Add(t);
+	>   
+	>   var b = new Button();
+	>   b.Text = 'Greet';
+	>   b.Click.add(function (thiz, ea) {
+	>     console.log('clicked');
+	>     MessageBox.Show('Hello, ' + t.Text + '!');
+	>   });
+	>   p.Controls.Add(b);
+	> 
+	>   Application.Run(f);
+	> }
+	(running WinForm application)
 
 
 ## Prerequisites:
 
 This library is built and tested on following environment:
 
-- Node.js v0.10.13
+- Node.js v0.12.1
 - .NET Framework 4.5
-- Visual Studio 2012
+- Visual Studio 2013
 - [Node.js native module build environment](https://github.com/TooTallNate/node-gyp)
 
 
