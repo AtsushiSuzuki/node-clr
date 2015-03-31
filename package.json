@@ -1,6 +1,6 @@
 {
   "name": "clr",
-  "version": "0.0.13",
+  "version": "0.0.13-2",
   "engines": {
     "node": ">=0.10 <0.13"
   },
