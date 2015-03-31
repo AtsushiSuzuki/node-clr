@@ -97,9 +97,9 @@ System::Object^ V8Function::InvokeAsync(array<System::Object^>^ args)
 	}
 }
 
-void V8Function::AsyncCallback(uv_async_t* handle)
+NAUV_WORK_CB(V8Function::AsyncCallback)
 {
-	auto thiz = (V8Function*)handle->data;
+	auto thiz = (V8Function*)async->data;
 
 	InvocationContext* ctx = nullptr;
 	uv_mutex_lock(&thiz->lock);

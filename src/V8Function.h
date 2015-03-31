@@ -32,7 +32,7 @@ private:
 	V8Function(v8::Handle<v8::Function> func);
 	System::Object^ InvokeImpl(array<System::Object^>^ args);
 	System::Object^ InvokeAsync(array<System::Object^>^ args);
-	static void AsyncCallback(uv_async_t* handle);
+	static NAUV_WORK_CB(AsyncCallback);
 	~V8Function();
 };
 
