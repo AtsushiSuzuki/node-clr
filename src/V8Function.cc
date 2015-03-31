@@ -10,19 +10,18 @@ V8Function* V8Function::New(Handle<Function> func)
 }
 
 V8Function::V8Function(Handle<Function> func)
-	: threadId((uv_thread_t)uv_thread_self()), terminate(false)
+	: threadId(GetCurrentThreadId()), terminate(false)
 {
 	NanAssignPersistent(function, func);
 
 	uv_async_init(uv_default_loop(), &this->async, &V8Function::AsyncCallback);
-	uv_unref((uv_handle_t*)&this->async);
 	this->async.data = this;
 	uv_mutex_init(&this->lock);
 }
 
 System::Object^ V8Function::Invoke(array<System::Object^>^ args)
 {
-	if (this->threadId == (uv_thread_t)uv_thread_self())
+	if (this->threadId == GetCurrentThreadId())
 	{
 		return this->InvokeImpl(args);
 	}
@@ -59,7 +58,7 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 
 	TryCatch trycatch;
 	auto result = NanMakeCallback(
-		Handle<Object>::Cast(NanNull()),
+		NanGetCurrentContext()->Global(),
 		NanNew(this->function),
 		(int)params.size(),
 		(0 < params.size())

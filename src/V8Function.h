@@ -16,7 +16,7 @@ private:
 	};
 
 private:
-	uv_thread_t threadId;
+	DWORD threadId;
 	v8::Persistent<v8::Function> function;
 	uv_async_t async;
 	uv_mutex_t lock;
