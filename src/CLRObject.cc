@@ -3,20 +3,20 @@
 using namespace v8;
 
 
-Persistent<ObjectTemplate> CLRObject::objectTemplate_;
+Nan::Persistent<v8::ObjectTemplate> CLRObject::objectTemplate_;
 
 void CLRObject::Init()
 {
-	auto tmpl = NanNew<ObjectTemplate>();
+	auto tmpl = Nan::New<ObjectTemplate>();
 	tmpl->SetInternalFieldCount(1);
-	NanAssignPersistent(objectTemplate_, tmpl);
+	objectTemplate_.Reset(tmpl);
 }
 
 bool CLRObject::IsCLRObject(Handle<Value> value)
 {
 	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
 	{
-		auto type = Handle<Object>::Cast(value)->GetHiddenValue(NanNew<String>("clr::type"));
+		auto type = Handle<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 		return !type.IsEmpty();
 	}
 	else
@@ -27,14 +27,14 @@ bool CLRObject::IsCLRObject(Handle<Value> value)
 
 Handle<Value> CLRObject::GetType(Handle<Value> value)
 {
-	return Handle<Object>::Cast(value)->GetHiddenValue(NanNew<String>("clr::type"));
+	return Handle<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 }
 
 bool CLRObject::IsCLRConstructor(Handle<Value> value)
 {
 	if (!value.IsEmpty() && value->IsFunction())
 	{
-		auto type = value->ToObject()->GetHiddenValue(NanNew<String>("clr::type"));
+		auto type = value->ToObject()->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 		return !type.IsEmpty();
 	}
 	else
@@ -45,7 +45,7 @@ bool CLRObject::IsCLRConstructor(Handle<Value> value)
 
 Handle<Value> CLRObject::TypeOf(Handle<Value> value)
 {
-	return Handle<Object>::Cast(value)->GetHiddenValue(NanNew<String>("clr::type"));
+	return Handle<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 }
 
 Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
@@ -58,7 +58,7 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 		: ToV8String(System::Object::typeid->AssemblyQualifiedName);
 
 	obj->SetHiddenValue(
-		NanNew<String>("clr::type"),
+		Nan::New<String>("clr::type").ToLocalChecked(),
 		name);
 
 	return obj;
@@ -66,7 +66,7 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 
 Handle<Object> CLRObject::Wrap(System::Object^ value)
 {
-	auto tmpl = NanNew<ObjectTemplate>(objectTemplate_);
+	auto tmpl = Nan::New<ObjectTemplate>(objectTemplate_);
 	auto obj = tmpl->NewInstance();
 	return Wrap(obj, value);
 }
@@ -86,34 +86,33 @@ Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Fun
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
-	auto tpl = NanNew<FunctionTemplate>(New);
+	auto tpl = Nan::New<FunctionTemplate>(New);
 	tpl->SetClassName(ToV8String(type->Name));
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 	
 	auto ctor = tpl->GetFunction();
-	ctor->SetHiddenValue(NanNew<String>("clr::type"), ToV8String(type->AssemblyQualifiedName));
-	ctor->SetHiddenValue(NanNew<String>("clr::initializer"), initializer);
+	ctor->SetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked(), ToV8String(type->AssemblyQualifiedName));
+	ctor->SetHiddenValue(Nan::New<String>("clr::initializer").ToLocalChecked(), initializer);
 
 	return ctor;
 }
 
 NAN_METHOD(CLRObject::New)
 {
-	NanScope();
+	Nan::HandleScope scope;
 
-	if (!args.IsConstructCall())
+	if (!info.IsConstructCall())
 	{
-		NanThrowError("Illegal invocation");
-		NanReturnUndefined();
+		return Nan::ThrowError("Illegal invocation");
 	}
 
-	auto ctor = args.Callee();
-	auto typeName = ctor->GetHiddenValue(NanNew<String>("clr::type"));
+	auto ctor = info.Callee();
+	auto typeName = ctor->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 
-	auto arr = NanNew<Array>();
-	for (int i = 0; i < args.Length(); i++)
+	auto arr = Nan::New<Array>();
+	for (int i = 0; i < info.Length(); i++)
 	{
-		arr->Set(NanNew<Number>(i), args[i]);
+		arr->Set(Nan::New<Number>(i), info[i]);
 	}
 	
 	System::Object^ value;
@@ -123,24 +122,22 @@ NAN_METHOD(CLRObject::New)
 	}
 	catch (System::Exception^ ex)
 	{
-		NanThrowError(ToV8Error(ex));
-		NanReturnUndefined();
+		Nan::ThrowError(ToV8Error(ex));
+		return;
 	}
 	
-	Wrap(args.This(), value);
+	Wrap(info.This(), value);
 
-	auto initializer = ctor->GetHiddenValue(NanNew<String>("clr::initializer"));
+	auto initializer = ctor->GetHiddenValue(Nan::New<String>("clr::initializer").ToLocalChecked());
 	if (!initializer.IsEmpty())
 	{
 		std::vector<Handle<Value> > params;
-		for (int i = 0; i < args.Length(); i++)
+		for (int i = 0; i < info.Length(); i++)
 		{
-			params.push_back(args[i]);
+			params.push_back(info[i]);
 		}
-		Local<Function>::Cast(initializer)->Call(args.This(), args.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
+		Local<Function>::Cast(initializer)->Call(info.This(), info.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
 	}
-
-	NanReturnUndefined();
 }
 
 CLRObject::CLRObject(System::Object^ value)

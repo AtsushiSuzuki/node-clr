@@ -16,15 +16,15 @@ class CLR
 	//   - assemblyPath: .NET EXE/DLL file path relative from cwd
 	static NAN_METHOD(Import)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 1 || !args[0]->IsString())
+		if (info.Length() != 1 || !info[0]->IsString())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		auto name = ToCLRString(args[0]);
+		auto name = ToCLRString(info[0]);
 		Assembly^ assembly;
 		try
 		{
@@ -42,17 +42,15 @@ class CLR
 		}
 		catch (System::Exception^ ex)
 		{
-			NanThrowError(ToV8Error(ex));
-			NanReturnUndefined();
+			Nan::ThrowError(ToV8Error(ex));
+			return;
 		}
 
 		if (assembly == nullptr)
 		{
-			NanThrowError("Assembly not found");
-			NanReturnUndefined();
+			Nan::ThrowError("Assembly not found");
+			return;
 		}
-
-		NanReturnUndefined();
 	}
 	
 
@@ -61,15 +59,15 @@ class CLR
 	//   - assemblyNames: array of assembly name string
 	static NAN_METHOD(GetAssemblies)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 0)
+		if (info.Length() != 0)
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		auto arr = NanNew<Array>();
+		auto arr = Nan::New<Array>();
 		auto index = 0;
 		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
 		{
@@ -78,10 +76,10 @@ class CLR
 				continue;
 			}
 
-			arr->Set(NanNew<Number>(index++), ToV8String(assembly->FullName));
+			arr->Set(Nan::New<Number>(index++), ToV8String(assembly->FullName));
 		}
 
-		NanReturnValue(arr);
+		info.GetReturnValue().Set(arr);
 	}
 	
 
@@ -90,15 +88,15 @@ class CLR
 	//   - typeNames: array of type name string
 	static NAN_METHOD(GetTypes)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 0)
+		if (info.Length() != 0)
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		auto arr = NanNew<Array>();
+		auto arr = Nan::New<Array>();
 		auto index = 0;
 		for each (auto assembly in System::AppDomain::CurrentDomain->GetAssemblies())
 		{
@@ -121,11 +119,11 @@ class CLR
 					continue;
 				}
 
-				arr->Set(NanNew<Number>(index++), ToV8String(type->AssemblyQualifiedName));
+				arr->Set(Nan::New<Number>(index++), ToV8String(type->AssemblyQualifiedName));
 			}
 		}
 
-		NanReturnValue(arr);
+		info.GetReturnValue().Set(arr);
 	}
 	
 
@@ -136,30 +134,30 @@ class CLR
 	//   - constructor: an constructor function to invoke CLR type constructor, returning CLR wrapped function
 	static NAN_METHOD(CreateConstructor)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if ((args.Length() != 1 && args.Length() != 2) ||
-			!args[0]->IsString() ||
-			!args[1]->IsFunction())
+		if ((info.Length() != 1 && info.Length() != 2) ||
+			!info[0]->IsString() ||
+			!info[1]->IsFunction())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
 		Handle<Value> result;
 		try
 		{
 			result = CLRObject::CreateConstructor(
-				Handle<String>::Cast(args[0]),
-				Handle<Function>::Cast(args[1]));
+				Handle<String>::Cast(info[0]),
+				Handle<Function>::Cast(info[1]));
 		}
 		catch (System::Exception^ ex)
 		{
-			NanThrowError(ToV8Error(ex));
-			NanReturnUndefined();
+			Nan::ThrowError(ToV8Error(ex));
+			return;
 		}
 
-		NanReturnValue(result);
+		info.GetReturnValue().Set(result);
 	}
 	
 
@@ -174,19 +172,19 @@ class CLR
 	//   - members[i].fullName: CLR type's full name for nestedType
 	static NAN_METHOD(GetMembers)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 2 ||
-			!args[0]->IsString())
+		if (info.Length() != 2 ||
+			!info[0]->IsString())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		auto type = System::Type::GetType(ToCLRString(args[0]), true);
-		auto isStatic = !args[1]->BooleanValue();
+		auto type = System::Type::GetType(ToCLRString(info[0]), true);
+		auto isStatic = !info[1]->BooleanValue();
 		
-		auto obj = NanNew<Object>();
+		auto obj = Nan::New<Object>();
 		auto members = type->GetMembers(
 			BindingFlags::Public |
 			((isStatic) ? BindingFlags::Static : BindingFlags::Instance));
@@ -198,9 +196,9 @@ class CLR
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
 				// events
-				auto desc = NanNew<Object>();
-				desc->Set(NanNew<String>("name"), ToV8String(member->Name));
-				desc->Set(NanNew<String>("type"), NanNew<String>("event"));
+				auto desc = Nan::New<Object>();
+				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("event").ToLocalChecked());
 				obj->Set(ToV8Symbol(member->Name), desc);
 			}
 
@@ -210,17 +208,17 @@ class CLR
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
 				// fields
-				auto desc = NanNew<Object>();
-				desc->Set(NanNew<String>("name"), ToV8String(member->Name));
-				desc->Set(NanNew<String>("type"), NanNew<String>("field"));
-				auto access = NanNew<Array>();
+				auto desc = Nan::New<Object>();
+				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("field").ToLocalChecked());
+				auto access = Nan::New<Array>();
 				int index = 0;
-				access->Set(NanNew<Number>(index++), NanNew<String>("get"));
+				access->Set(Nan::New<Number>(index++), Nan::New<String>("get").ToLocalChecked());
 				if (!fi->IsInitOnly)
 				{
-					access->Set(NanNew<Number>(index++), NanNew<String>("set"));
+					access->Set(Nan::New<Number>(index++), Nan::New<String>("set").ToLocalChecked());
 				}
-				desc->Set(NanNew<String>("access"), access);
+				desc->Set(Nan::New<String>("access").ToLocalChecked(), access);
 				obj->Set(ToV8Symbol(member->Name), desc);
 			}
 
@@ -230,9 +228,9 @@ class CLR
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
 				// methods
-				auto desc = NanNew<Object>();
-				desc->Set(NanNew<String>("name"), ToV8String(member->Name));
-				desc->Set(NanNew<String>("type"), NanNew<String>("method"));
+				auto desc = Nan::New<Object>();
+				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("method").ToLocalChecked());
 				obj->Set(ToV8Symbol(member->Name), desc);
 			}
 
@@ -243,22 +241,22 @@ class CLR
 				// properties
 				auto desc = (obj->Has(ToV8Symbol(member->Name)))
 					? Local<Object>::Cast(obj->Get(ToV8Symbol(member->Name)))
-					: NanNew<Object>();
-				desc->Set(NanNew<String>("name"), ToV8String(member->Name));
-				desc->Set(NanNew<String>("type"), NanNew<String>("property"));
+					: Nan::New<Object>();
+				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("property").ToLocalChecked());
 				
-				auto access = (obj->Has(NanNew<String>("access")))
-					? Local<Array>::Cast(obj->Get(NanNew<String>("access")))
-					: NanNew<Array>();
+				auto access = (obj->Has(Nan::New<String>("access").ToLocalChecked()))
+					? Local<Array>::Cast(obj->Get(Nan::New<String>("access").ToLocalChecked()))
+					: Nan::New<Array>();
 				auto canGet = pi->CanRead;
 				auto canSet = pi->CanWrite;
 				for (int i = 0; i < (int)access->Length(); i++)
 				{
-					if (access->Get(NanNew<Number>(i))->StrictEquals(NanNew<String>("get")))
+					if (access->Get(Nan::New<Number>(i))->StrictEquals(Nan::New<String>("get").ToLocalChecked()))
 					{
 						canGet = true;
 					}
-					if (access->Get(NanNew<Number>(i))->StrictEquals(NanNew<String>("set")))
+					if (access->Get(Nan::New<Number>(i))->StrictEquals(Nan::New<String>("set").ToLocalChecked()))
 					{
 						canSet = true;
 					}
@@ -266,15 +264,15 @@ class CLR
 				int index = 0;
 				if (canGet)
 				{
-					access->Set(NanNew<Number>(index++), NanNew<String>("get"));
+					access->Set(Nan::New<Number>(index++), Nan::New<String>("get").ToLocalChecked());
 				}
 				if (canSet)
 				{
-					access->Set(NanNew<Number>(index++), NanNew<String>("set"));
+					access->Set(Nan::New<Number>(index++), Nan::New<String>("set").ToLocalChecked());
 				}
-				desc->Set(NanNew<String>("access"), access);
+				desc->Set(Nan::New<String>("access").ToLocalChecked(), access);
 
-				desc->Set(NanNew<String>("indexed"), NanNew<Boolean>(0 < pi->GetIndexParameters()->Length));
+				desc->Set(Nan::New<String>("indexed").ToLocalChecked(), Nan::New<Boolean>(0 < pi->GetIndexParameters()->Length));
 				
 				obj->Set(ToV8Symbol(member->Name), desc);
 			}
@@ -285,15 +283,15 @@ class CLR
 				!obj->Has(ToV8Symbol(member->Name)))
 			{
 				// nested typess
-				auto desc = NanNew<Object>();
-				desc->Set(NanNew<String>("name"), ToV8String(member->Name));
-				desc->Set(NanNew<String>("type"), NanNew<String>("nestedType"));
-				desc->Set(NanNew<String>("fullName"), ToV8String(ti->AssemblyQualifiedName));
+				auto desc = Nan::New<Object>();
+				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("nestedType").ToLocalChecked());
+				desc->Set(Nan::New<String>("fullName").ToLocalChecked(), ToV8String(ti->AssemblyQualifiedName));
 				obj->Set(ToV8Symbol(member->Name), desc);
 			}
 		}
 
-		NanReturnValue(obj);
+		info.GetReturnValue().Set(obj);
 	}
 
 	
@@ -306,34 +304,34 @@ class CLR
 	//   - returnValue: return value of method, v8 primitive or CLR wrapped object
 	static NAN_METHOD(InvokeMethod)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 4 ||
-			!args[0]->IsString() ||
-			!args[1]->IsString() ||
-			(!CLRObject::IsCLRObject(args[2]) && args[2]->BooleanValue() != false) ||
-			!args[3]->IsArray())
+		if (info.Length() != 4 ||
+			!info[0]->IsString() ||
+			!info[1]->IsString() ||
+			(!CLRObject::IsCLRObject(info[2]) && info[2]->BooleanValue() != false) ||
+			!info[3]->IsArray())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
 		Handle<Value> result;
 		try
 		{
 			result = CLRBinder::InvokeMethod(
-				args[0],
-				args[1],
-				args[2],
-				args[3]);
+				info[0],
+				info[1],
+				info[2],
+				info[3]);
 		}
 		catch (System::Exception^ ex)
 		{
-			NanThrowError(ToV8Error(ex));
-			NanReturnUndefined();
+			Nan::ThrowError(ToV8Error(ex));
+			return;
 		}
 
-		NanReturnValue(result);
+		info.GetReturnValue().Set(result);
 	}
 	
 
@@ -345,32 +343,32 @@ class CLR
 	//   - returnValue: field value, v8 primitive or CLR wrapped object
 	static NAN_METHOD(GetField)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 3 ||
-			!args[0]->IsString() ||
-			!args[1]->IsString() ||
-			(!CLRObject::IsCLRObject(args[2]) && args[2]->BooleanValue() != false))
+		if (info.Length() != 3 ||
+			!info[0]->IsString() ||
+			!info[1]->IsString() ||
+			(!CLRObject::IsCLRObject(info[2]) && info[2]->BooleanValue() != false))
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
 		Handle<Value> result;
 		try
 		{
 			result = CLRBinder::GetField(
-				args[0],
-				args[1],
-				args[2]);
+				info[0],
+				info[1],
+				info[2]);
 		}
 		catch (System::Exception^ ex)
 		{
-			NanThrowError(ToV8Error(ex));
-			NanReturnUndefined();
+			Nan::ThrowError(ToV8Error(ex));
+			return;
 		}
 
-		NanReturnValue(result);
+		info.GetReturnValue().Set(result);
 	}
 	
 
@@ -382,33 +380,31 @@ class CLR
 	//   - value: field value, v8 primitive or CLR wrapped object
 	static NAN_METHOD(SetField)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 4 ||
-			!args[0]->IsString() ||
-			!args[1]->IsString() ||
-			(!CLRObject::IsCLRObject(args[2]) && args[2]->BooleanValue() != false) ||
-			!args[3].IsEmpty())
+		if (info.Length() != 4 ||
+			!info[0]->IsString() ||
+			!info[1]->IsString() ||
+			(!CLRObject::IsCLRObject(info[2]) && info[2]->BooleanValue() != false) ||
+			!info[3].IsEmpty())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
 		try
 		{
 			CLRBinder::SetField(
-				args[0],
-				args[1],
-				args[2],
-				args[3]);
+				info[0],
+				info[1],
+				info[2],
+				info[3]);
 		}
 		catch (System::Exception^ ex)
 		{
-			NanThrowError(ToV8Error(ex));
-			NanReturnUndefined();
+			Nan::ThrowError(ToV8Error(ex));
+			return;
 		}
-
-		NanReturnUndefined();
 	}
 	
 
@@ -417,58 +413,58 @@ class CLR
 	//   - obj: CLR wrapped object or any javascript value
 	static NAN_METHOD(IsCLRObject)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 1 ||
-			args[0].IsEmpty())
+		if (info.Length() != 1 ||
+			info[0].IsEmpty())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		NanReturnValue(NanNew<Boolean>(CLRObject::IsCLRObject(args[0])));
+		info.GetReturnValue().Set(Nan::New<Boolean>(CLRObject::IsCLRObject(info[0])));
 	}
 
 	static NAN_METHOD(GetType)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 1 ||
-			!CLRObject::IsCLRObject(args[0]))
+		if (info.Length() != 1 ||
+			!CLRObject::IsCLRObject(info[0]))
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		NanReturnValue(CLRObject::GetType(args[0]));
+		info.GetReturnValue().Set(CLRObject::GetType(info[0]));
 	}
 
 	static NAN_METHOD(IsCLRConstructor)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 1 ||
-			args[0].IsEmpty())
+		if (info.Length() != 1 ||
+			info[0].IsEmpty())
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 		
-		NanReturnValue(CLRObject::TypeOf(args[0]));
+		info.GetReturnValue().Set(CLRObject::TypeOf(info[0]));
 	}
 	
 	static NAN_METHOD(TypeOf)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (args.Length() != 1 ||
-			!CLRObject::IsCLRConstructor(args[0]))
+		if (info.Length() != 1 ||
+			!CLRObject::IsCLRConstructor(info[0]))
 		{
-			NanThrowTypeError("Arguments does not match it's parameter list");
-			NanReturnUndefined();
+			Nan::ThrowTypeError("Arguments does not match it's parameter list");
+			return;
 		}
 
-		NanReturnValue(CLRObject::TypeOf(args[0]));
+		info.GetReturnValue().Set(CLRObject::TypeOf(info[0]));
 	}
 
 	// resolve assemblies which is loaded by reflection
@@ -490,18 +486,18 @@ public:
 	{
 		CLRObject::Init();
 
-		exports->Set(NanNew<String>("import"), NanNew<FunctionTemplate>(Import)->GetFunction());
-		exports->Set(NanNew<String>("getAssemblies"), NanNew<FunctionTemplate>(GetAssemblies)->GetFunction());
-		exports->Set(NanNew<String>("getTypes"), NanNew<FunctionTemplate>(GetTypes)->GetFunction());
-		exports->Set(NanNew<String>("createConstructor"), NanNew<FunctionTemplate>(CreateConstructor)->GetFunction());
-		exports->Set(NanNew<String>("getMembers"), NanNew<FunctionTemplate>(GetMembers)->GetFunction());
-		exports->Set(NanNew<String>("invokeMethod"), NanNew<FunctionTemplate>(InvokeMethod)->GetFunction());
-		exports->Set(NanNew<String>("getField"), NanNew<FunctionTemplate>(GetField)->GetFunction());
-		exports->Set(NanNew<String>("setField"), NanNew<FunctionTemplate>(SetField)->GetFunction());
-		exports->Set(NanNew<String>("isCLRObject"), NanNew<FunctionTemplate>(IsCLRObject)->GetFunction());
-		exports->Set(NanNew<String>("getType"), NanNew<FunctionTemplate>(GetType)->GetFunction());
-		exports->Set(NanNew<String>("isCLRConstructor"), NanNew<FunctionTemplate>(IsCLRConstructor)->GetFunction());
-		exports->Set(NanNew<String>("typeOf"), NanNew<FunctionTemplate>(TypeOf)->GetFunction());
+		exports->Set(Nan::New<String>("import").ToLocalChecked(), Nan::New<FunctionTemplate>(Import)->GetFunction());
+		exports->Set(Nan::New<String>("getAssemblies").ToLocalChecked(), Nan::New<FunctionTemplate>(GetAssemblies)->GetFunction());
+		exports->Set(Nan::New<String>("getTypes").ToLocalChecked(), Nan::New<FunctionTemplate>(GetTypes)->GetFunction());
+		exports->Set(Nan::New<String>("createConstructor").ToLocalChecked(), Nan::New<FunctionTemplate>(CreateConstructor)->GetFunction());
+		exports->Set(Nan::New<String>("getMembers").ToLocalChecked(), Nan::New<FunctionTemplate>(GetMembers)->GetFunction());
+		exports->Set(Nan::New<String>("invokeMethod").ToLocalChecked(), Nan::New<FunctionTemplate>(InvokeMethod)->GetFunction());
+		exports->Set(Nan::New<String>("getField").ToLocalChecked(), Nan::New<FunctionTemplate>(GetField)->GetFunction());
+		exports->Set(Nan::New<String>("setField").ToLocalChecked(), Nan::New<FunctionTemplate>(SetField)->GetFunction());
+		exports->Set(Nan::New<String>("isCLRObject").ToLocalChecked(), Nan::New<FunctionTemplate>(IsCLRObject)->GetFunction());
+		exports->Set(Nan::New<String>("getType").ToLocalChecked(), Nan::New<FunctionTemplate>(GetType)->GetFunction());
+		exports->Set(Nan::New<String>("isCLRConstructor").ToLocalChecked(), Nan::New<FunctionTemplate>(IsCLRConstructor)->GetFunction());
+		exports->Set(Nan::New<String>("typeOf").ToLocalChecked(), Nan::New<FunctionTemplate>(TypeOf)->GetFunction());
 
 		System::AppDomain::CurrentDomain->AssemblyResolve += gcnew System::ResolveEventHandler(
 			&CLR::ResolveAssembly);

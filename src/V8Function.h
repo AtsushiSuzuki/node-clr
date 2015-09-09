@@ -17,7 +17,7 @@ private:
 
 private:
 	DWORD threadId;
-	v8::Persistent<v8::Function> function;
+	Nan::Persistent<v8::Function> function;
 	uv_async_t async;
 	uv_mutex_t lock;
 	std::queue<InvocationContext*> invocations;

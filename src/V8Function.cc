@@ -12,7 +12,7 @@ V8Function* V8Function::New(Handle<Function> func)
 V8Function::V8Function(Handle<Function> func)
 	: threadId(GetCurrentThreadId()), terminate(false)
 {
-	NanAssignPersistent(function, func);
+	function.Reset(func);
 
 	uv_async_init(uv_default_loop(), &this->async, &V8Function::AsyncCallback);
 	uv_unref((uv_handle_t*)&this->async);
@@ -49,7 +49,7 @@ V8Function::~V8Function()
 
 System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 {
-	NanScope();
+	Nan::HandleScope scope;
 
 	std::vector<Handle<Value> > params;
 	for each (System::Object^ arg in args)
@@ -58,9 +58,9 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 	}
 
 	TryCatch trycatch;
-	auto result = NanMakeCallback(
-		NanGetCurrentContext()->Global(),
-		NanNew(this->function),
+	auto result = Nan::MakeCallback(
+		Nan::GetCurrentContext()->Global(),
+		Nan::New(this->function),
 		(int)params.size(),
 		(0 < params.size())
 			? &(params[0])

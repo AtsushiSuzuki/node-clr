@@ -30,7 +30,7 @@
       ],
       "msvs_settings": {
         "VCCLCompilerTool": {
-          "AdditionalOptions": [ "/clr" ],
+          "AdditionalOptions": [ "/clr", "/TP"  ],
           "DisableSpecificWarnings": [ "4506" ]
         },
         "VCLinkerTool": {

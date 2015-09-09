@@ -29,7 +29,7 @@ public:
 private:
 	static NAN_METHOD(New);
 
-	static v8::Persistent<v8::ObjectTemplate> objectTemplate_;
+	static Nan::Persistent<v8::ObjectTemplate> objectTemplate_;
 
 	gcroot<System::Object^> value_;
 
