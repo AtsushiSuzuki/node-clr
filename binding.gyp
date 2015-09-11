@@ -2,6 +2,7 @@
   "targets": [
     {
       "target_name": "clr",
+      "win_delay_load_hook": "false",
       "include_dirs": [
       	"<!(node -e \"require('nan')\")"
       ],
@@ -30,7 +31,7 @@
       ],
       "msvs_settings": {
         "VCCLCompilerTool": {
-          "AdditionalOptions": [ "/clr", "/TP"  ],
+          "AdditionalOptions": [ "/clr" ],
           "DisableSpecificWarnings": [ "4506" ]
         },
         "VCLinkerTool": {
