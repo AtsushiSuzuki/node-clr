@@ -1,8 +1,8 @@
 {
   "name": "clr",
-  "version": "0.0.13-2",
+  "version": "0.0.14",
   "engines": {
-    "node": ">=0.10 <0.13"
+    "node": ">=0.12 <5"
   },
   "description": "Node.js binding for .NET Framework API",
   "repository": {
