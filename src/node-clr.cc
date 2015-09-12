@@ -157,7 +157,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(result);
+		info.GetReturnValue().Set(Nan::New(result));
 	}
 	
 
@@ -331,7 +331,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(result);
+		info.GetReturnValue().Set(Nan::New(result));
 	}
 	
 
@@ -368,7 +368,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(result);
+		info.GetReturnValue().Set(Nan::New(result));
 	}
 	
 
@@ -436,7 +436,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(CLRObject::GetType(info[0]));
+		info.GetReturnValue().Set(Nan::New(CLRObject::GetType(info[0])));
 	}
 
 	static NAN_METHOD(IsCLRConstructor)
@@ -450,7 +450,7 @@ class CLR
 			return;
 		}
 		
-		info.GetReturnValue().Set(CLRObject::TypeOf(info[0]));
+		info.GetReturnValue().Set(Nan::New(CLRObject::TypeOf(info[0])));
 	}
 	
 	static NAN_METHOD(TypeOf)
@@ -464,7 +464,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(CLRObject::TypeOf(info[0]));
+		info.GetReturnValue().Set(Nan::New(CLRObject::TypeOf(info[0])));
 	}
 
 	// resolve assemblies which is loaded by reflection
