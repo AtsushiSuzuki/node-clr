@@ -8,8 +8,8 @@ using namespace System::Reflection;
 
 
 System::Object^ CLRBinder::InvokeConstructor(
-	Handle<Value> typeName,
-	Handle<Array> args)
+	Local<Value> typeName,
+	Local<Array> args)
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
@@ -30,7 +30,7 @@ return InvokeConstructor(
 
 System::Object^ CLRBinder::InvokeConstructor(
 	System::Type^ type,
-	Handle<Array> args)
+	Local<Array> args)
 {
 	if (args->Length() == 0)
 	{
@@ -51,11 +51,11 @@ System::Object^ CLRBinder::InvokeConstructor(
 	}
 }
 
-Handle<Value> CLRBinder::InvokeMethod(
-	Handle<Value> typeName,
-	Handle<Value> name,
-	Handle<Value> target,
-	Handle<Value> args)
+Local<Value> CLRBinder::InvokeMethod(
+	Local<Value> typeName,
+	Local<Value> name,
+	Local<Value> target,
+	Local<Value> args)
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
@@ -65,14 +65,14 @@ Handle<Value> CLRBinder::InvokeMethod(
 		(CLRObject::IsCLRObject(target))
 			? CLRObject::Unwrap(target)
 			: nullptr,
-		Handle<Array>::Cast(args));
+		Local<Array>::Cast(args));
 }
 
-Handle<Value> CLRBinder::InvokeMethod(
+Local<Value> CLRBinder::InvokeMethod(
 	System::Type^ type,
 	System::String^ name,
 	System::Object^ target,
-	Handle<Array> args)
+	Local<Array> args)
 {
 	auto methods = type->GetMethods(
 		BindingFlags::Public |
@@ -108,10 +108,10 @@ Handle<Value> CLRBinder::InvokeMethod(
 	}
 }
 
-Handle<Value> CLRBinder::GetField(
-	Handle<Value> typeName,
-	Handle<Value> name,
-	Handle<Value> target)
+Local<Value> CLRBinder::GetField(
+	Local<Value> typeName,
+	Local<Value> name,
+	Local<Value> target)
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
@@ -123,7 +123,7 @@ Handle<Value> CLRBinder::GetField(
 			: nullptr);
 }
 
-Handle<Value> CLRBinder::GetField(
+Local<Value> CLRBinder::GetField(
 	System::Type^ type,
 	System::String^ name,
 	System::Object^ target)
@@ -134,10 +134,10 @@ Handle<Value> CLRBinder::GetField(
 }
 
 void CLRBinder::SetField(
-	Handle<Value> typeName,
-	Handle<Value> name,
-	Handle<Value> target,
-	Handle<Value> value)
+	Local<Value> typeName,
+	Local<Value> name,
+	Local<Value> target,
+	Local<Value> value)
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
@@ -154,7 +154,7 @@ void CLRBinder::SetField(
 	System::Type^ type,
 	System::String^ name,
 	System::Object^ target,
-	Handle<Value> value)
+	Local<Value> value)
 {
 	auto fi = type->GetField(name);
 	fi->SetValue(
@@ -169,7 +169,7 @@ void CLRBinder::SetField(
 
 MethodBase^ CLRBinder::SelectMethod(
 	array<MethodBase^>^ methods,
-	Handle<Array> args)
+	Local<Array> args)
 {
 	if (methods->Length == 0)
 	{
@@ -202,7 +202,7 @@ MethodBase^ CLRBinder::SelectMethod(
 
 array<System::Object^>^ CLRBinder::BindToMethod(
 	MethodBase^ method,
-	Handle<Array> args)
+	Local<Array> args)
 {
 	int match;
 	auto result = BindToMethod(
@@ -221,7 +221,7 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 
 array<System::Object^>^ CLRBinder::BindToMethod(
 	MethodBase^ method,
-	Handle<Array> args,
+	Local<Array> args,
 	int% match)
 {
 	auto params = method->GetParameters();
@@ -342,7 +342,7 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 
 MethodBase^ CLRBinder::FindMostSpecificMethod(
 	array<MethodBase^>^ methods,
-	Handle<Array> args)
+	Local<Array> args)
 {
 	auto current = methods[0];
 	for (int i = 1; i < methods->Length; i++)

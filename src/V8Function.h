@@ -24,12 +24,12 @@ private:
 	bool terminate;
 
 public:
-	static V8Function* New(v8::Handle<v8::Function> func);
+	static V8Function* New(v8::Local<v8::Function> func);
 	System::Object^ Invoke(array<System::Object^>^ args);
 	void Destroy();
 
 private:
-	V8Function(v8::Handle<v8::Function> func);
+	V8Function(v8::Local<v8::Function> func);
 	System::Object^ InvokeImpl(array<System::Object^>^ args);
 	System::Object^ InvokeAsync(array<System::Object^>^ args);
 	static NAUV_WORK_CB(AsyncCallback);

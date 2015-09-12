@@ -4,7 +4,7 @@ using namespace v8;
 using namespace System::Reflection;
 
 
-V8Delegate::V8Delegate(Handle<Function> function)
+V8Delegate::V8Delegate(Local<Function> function)
 	: func_(V8Function::New(function))
 {
 }
@@ -19,13 +19,13 @@ System::Object^ V8Delegate::Invoke(array<System::Object^>^ args)
 	return this->func_->Invoke(args);
 }
 
-System::Delegate^ V8Delegate::CreateDelegate(Handle<Function> func)
+System::Delegate^ V8Delegate::CreateDelegate(Local<Function> func)
 {
 	auto thiz = gcnew V8Delegate(func);
 	return gcnew System::Func<array<System::Object^>^, System::Object^>(thiz, &V8Delegate::Invoke);
 }
 
-System::Delegate^ V8Delegate::CreateDelegate(Handle<Function> func, System::Type^ type)
+System::Delegate^ V8Delegate::CreateDelegate(Local<Function> func, System::Type^ type)
 {
 	auto thiz = gcnew V8Delegate(func);
 

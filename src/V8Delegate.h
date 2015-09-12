@@ -9,15 +9,15 @@ ref class V8Delegate
 {
 public:
 	// create Func<Object[], Object> from Javascript function
-	static System::Delegate^ CreateDelegate(v8::Handle<v8::Function> func);
+	static System::Delegate^ CreateDelegate(v8::Local<v8::Function> func);
 	
 	// create any type of Delegate from Javascript function
-	static System::Delegate^ CreateDelegate(v8::Handle<v8::Function> func, System::Type^ type);
+	static System::Delegate^ CreateDelegate(v8::Local<v8::Function> func, System::Type^ type);
 
 private:
 	V8Function* func_;
 
-	V8Delegate(v8::Handle<v8::Function> func);
+	V8Delegate(v8::Local<v8::Function> func);
 	
 	~V8Delegate();
 

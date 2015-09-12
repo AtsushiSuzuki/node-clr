@@ -10,21 +10,21 @@ class CLRObject : public node::ObjectWrap
 public:
 	static void Init();
 
-	static bool IsCLRObject(v8::Handle<v8::Value> obj);
+	static bool IsCLRObject(v8::Local<v8::Value> obj);
 
-	static v8::Handle<v8::Value> GetType(v8::Handle<v8::Value> value);
+	static v8::Local<v8::Value> GetType(v8::Local<v8::Value> value);
 
-	static bool IsCLRConstructor(v8::Handle<v8::Value> value);
+	static bool IsCLRConstructor(v8::Local<v8::Value> value);
 
-	static v8::Handle<v8::Value> TypeOf(v8::Handle<v8::Value> value);
+	static v8::Local<v8::Value> TypeOf(v8::Local<v8::Value> value);
 
-	static v8::Handle<v8::Object> Wrap(v8::Handle<v8::Object> obj, System::Object^ value);
+	static v8::Local<v8::Object> Wrap(v8::Local<v8::Object> obj, System::Object^ value);
 
-	static v8::Handle<v8::Object> Wrap(System::Object^ value);
+	static v8::Local<v8::Object> Wrap(System::Object^ value);
 
-	static System::Object^ Unwrap(v8::Handle<v8::Value> obj);
+	static System::Object^ Unwrap(v8::Local<v8::Value> obj);
 
-	static v8::Local<v8::Function> CreateConstructor(v8::Handle<v8::String> typeName, v8::Handle<v8::Function> initializer);
+	static v8::Local<v8::Function> CreateConstructor(v8::Local<v8::String> typeName, v8::Local<v8::Function> initializer);
 
 private:
 	static NAN_METHOD(New);

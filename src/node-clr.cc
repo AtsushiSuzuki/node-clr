@@ -144,12 +144,12 @@ class CLR
 			return;
 		}
 
-		Handle<Value> result;
+		Local<Value> result;
 		try
 		{
 			result = CLRObject::CreateConstructor(
-				Handle<String>::Cast(info[0]),
-				Handle<Function>::Cast(info[1]));
+				Local<String>::Cast(info[0]),
+				Local<Function>::Cast(info[1]));
 		}
 		catch (System::Exception^ ex)
 		{
@@ -157,7 +157,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(Nan::New(result));
+		info.GetReturnValue().Set(result);
 	}
 	
 
@@ -316,7 +316,7 @@ class CLR
 			return;
 		}
 
-		Handle<Value> result;
+		Local<Value> result;
 		try
 		{
 			result = CLRBinder::InvokeMethod(
@@ -331,7 +331,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(Nan::New(result));
+		info.GetReturnValue().Set(result);
 	}
 	
 
@@ -354,7 +354,7 @@ class CLR
 			return;
 		}
 
-		Handle<Value> result;
+		Local<Value> result;
 		try
 		{
 			result = CLRBinder::GetField(
@@ -368,7 +368,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(Nan::New(result));
+		info.GetReturnValue().Set(result);
 	}
 	
 
@@ -436,7 +436,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(Nan::New(CLRObject::GetType(info[0])));
+		info.GetReturnValue().Set(CLRObject::GetType(info[0]));
 	}
 
 	static NAN_METHOD(IsCLRConstructor)
@@ -450,7 +450,7 @@ class CLR
 			return;
 		}
 		
-		info.GetReturnValue().Set(Nan::New(CLRObject::TypeOf(info[0])));
+		info.GetReturnValue().Set(CLRObject::TypeOf(info[0]));
 	}
 	
 	static NAN_METHOD(TypeOf)
@@ -464,7 +464,7 @@ class CLR
 			return;
 		}
 
-		info.GetReturnValue().Set(Nan::New(CLRObject::TypeOf(info[0])));
+		info.GetReturnValue().Set(CLRObject::TypeOf(info[0]));
 	}
 
 	// resolve assemblies which is loaded by reflection
@@ -482,7 +482,7 @@ class CLR
 	}
 
 public:
-	static void Init(Handle<Object> exports)
+	static void Init(Local<Object> exports)
 	{
 		CLRObject::Init();
 

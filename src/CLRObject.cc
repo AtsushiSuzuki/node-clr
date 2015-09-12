@@ -12,11 +12,11 @@ void CLRObject::Init()
 	objectTemplate_.Reset(tmpl);
 }
 
-bool CLRObject::IsCLRObject(Handle<Value> value)
+bool CLRObject::IsCLRObject(Local<Value> value)
 {
 	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
 	{
-		auto type = Handle<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+		auto type = Local<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 		return !type.IsEmpty();
 	}
 	else
@@ -25,12 +25,12 @@ bool CLRObject::IsCLRObject(Handle<Value> value)
 	}
 }
 
-Handle<Value> CLRObject::GetType(Handle<Value> value)
+Local<Value> CLRObject::GetType(Local<Value> value)
 {
-	return Handle<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+	return Local<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 }
 
-bool CLRObject::IsCLRConstructor(Handle<Value> value)
+bool CLRObject::IsCLRConstructor(Local<Value> value)
 {
 	if (!value.IsEmpty() && value->IsFunction())
 	{
@@ -43,12 +43,12 @@ bool CLRObject::IsCLRConstructor(Handle<Value> value)
 	}
 }
 
-Handle<Value> CLRObject::TypeOf(Handle<Value> value)
+Local<Value> CLRObject::TypeOf(Local<Value> value)
 {
-	return Handle<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+	return Local<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
 }
 
-Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
+Local<Object> CLRObject::Wrap(Local<Object> obj, System::Object^ value)
 {
 	auto wrapper = new CLRObject(value);
 	wrapper->node::ObjectWrap::Wrap(obj);
@@ -64,14 +64,14 @@ Handle<Object> CLRObject::Wrap(Handle<Object> obj, System::Object^ value)
 	return obj;
 }
 
-Handle<Object> CLRObject::Wrap(System::Object^ value)
+Local<Object> CLRObject::Wrap(System::Object^ value)
 {
 	auto tmpl = Nan::New<ObjectTemplate>(objectTemplate_);
 	auto obj = tmpl->NewInstance();
 	return Wrap(obj, value);
 }
 
-System::Object^ CLRObject::Unwrap(Handle<Value> obj)
+System::Object^ CLRObject::Unwrap(Local<Value> obj)
 {
 	if (!IsCLRObject(obj))
 	{
@@ -82,7 +82,7 @@ System::Object^ CLRObject::Unwrap(Handle<Value> obj)
 	return wrapper->value_;
 }
 
-Local<Function> CLRObject::CreateConstructor(Handle<String> typeName, Handle<Function> initializer)
+Local<Function> CLRObject::CreateConstructor(Local<String> typeName, Local<Function> initializer)
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
@@ -131,7 +131,7 @@ NAN_METHOD(CLRObject::New)
 	auto initializer = ctor->GetHiddenValue(Nan::New<String>("clr::initializer").ToLocalChecked());
 	if (!initializer.IsEmpty())
 	{
-		std::vector<Handle<Value> > params;
+		std::vector<Local<Value> > params;
 		for (int i = 0; i < info.Length(); i++)
 		{
 			params.push_back(info[i]);

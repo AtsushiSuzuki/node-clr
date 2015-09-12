@@ -14,7 +14,7 @@ using namespace System::Text::RegularExpressions;
  * String conversion
  */
 
-System::String^ ToCLRString(Handle<Value> value)
+System::String^ ToCLRString(Local<Value> value)
 {
 	return gcnew System::String((const wchar_t *)(*String::Value(value)));
 }
@@ -39,13 +39,13 @@ Local<String> ToV8Symbol(System::String ^value)
  */
 
 System::Object^ ToCLRValue(
-	v8::Handle<v8::Value> value)
+	v8::Local<v8::Value> value)
 {
 	return ChangeType(value, System::Object::typeid);
 }
 
 System::Object^ ChangeType(
-	Handle<Value> value,
+	Local<Value> value,
 	System::Type^ type)
 {
 	int match;
@@ -65,7 +65,7 @@ System::Object^ ChangeType(
 }
 
 System::Object^ ChangeType(
-	Handle<Value> value,
+	Local<Value> value,
 	System::Type^ type,
 	int& match)
 {
@@ -239,7 +239,7 @@ System::Object^ ChangeType(
 	}
 	else if (value->IsFunction())
 	{
-		auto func = Handle<Function>::Cast(value);
+		auto func = Local<Function>::Cast(value);
 		if (type->IsAssignableFrom(System::MulticastDelegate::typeid))
 		{
 			match = EXACT;
@@ -259,7 +259,7 @@ System::Object^ ChangeType(
 	}
 	else if (value->IsArray())
 	{
-		// TODO: handle cyclic reference
+		// TODO: Local cyclic reference
 
 		auto elementType = System::Object::typeid;
 		if (type->IsArray && type->HasElementType)
@@ -279,7 +279,7 @@ System::Object^ ChangeType(
 			}
 		}
 
-		auto from = Handle<Array>::Cast(value);
+		auto from = Local<Array>::Cast(value);
 		auto to = System::Array::CreateInstance(elementType, from->Length());
 		match = EXACT;
 		for (int i = 0; i < (int)from->Length(); i++)
@@ -315,10 +315,10 @@ System::Object^ ChangeType(
 	}
 	else
 	{
-		// TODO: handle DataContractAttribute
-		// TODO: handle cyclic reference
+		// TODO: Local DataContractAttribute
+		// TODO: Local cyclic reference
 
-		auto from = Handle<Object>::Cast(value);
+		auto from = Local<Object>::Cast(value);
 		auto to = (IDictionary<System::String^, System::Object^>^)(gcnew ExpandoObject());
 		
 		auto names = from->GetOwnPropertyNames();
@@ -447,7 +447,7 @@ System::Object^ ChangeType(
 	}
 }
 
-Handle<Value> ToV8Value(System::Object^ value)
+Local<Value> ToV8Value(System::Object^ value)
 {
 	if (value == nullptr)
 	{
@@ -496,7 +496,7 @@ Handle<Value> ToV8Value(System::Object^ value)
  * Exception conversion
  */
 
-System::Exception^ ToCLRException(Handle<Value> ex)
+System::Exception^ ToCLRException(Local<Value> ex)
 {
 	if (ex.IsEmpty() ||
 		(!ex->IsString() && !ex->IsObject()))
@@ -509,7 +509,7 @@ System::Exception^ ToCLRException(Handle<Value> ex)
 	}
 	else
 	{
-		auto obj = Handle<Object>::Cast(ex);
+		auto obj = Local<Object>::Cast(ex);
 		return gcnew V8InvocationException(
 			ToCLRString(obj->Get(Nan::New<String>("name").ToLocalChecked())),
 			ToCLRString(obj->Get(Nan::New<String>("message").ToLocalChecked())),

@@ -4,15 +4,15 @@ using namespace v8;
 using namespace System::Reflection;
 
 
-V8Function* V8Function::New(Handle<Function> func)
+V8Function* V8Function::New(Local<Function> func)
 {
 	return new V8Function(func);
 }
 
-V8Function::V8Function(Handle<Function> func)
+V8Function::V8Function(Local<Function> func)
 	: threadId(GetCurrentThreadId()), terminate(false)
 {
-	function.Reset(Nan::New(func));
+	function.Reset(func);
 
 	uv_async_init(uv_default_loop(), &this->async, &V8Function::AsyncCallback);
 	uv_unref((uv_handle_t*)&this->async);
@@ -54,7 +54,7 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 	std::vector<Local<Value> > params;
 	for each (System::Object^ arg in args)
 	{
-		params.push_back(Nan::New(ToV8Value(arg)));
+		params.push_back(ToV8Value(arg));
 	}
 
 	TryCatch trycatch;
