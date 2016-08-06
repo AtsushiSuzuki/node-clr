@@ -40,9 +40,9 @@
 
 This library is built and tested on following environment:
 
-- Node.js v0.12.1
+- Node.js v6.3.1
 - .NET Framework 4.5
-- Visual Studio 2013
+- Visual Studio 2015
 - [Node.js native module build environment](https://github.com/TooTallNate/node-gyp)
 
 
@@ -202,3 +202,4 @@ You can use .NET threads. All Javascript callback functions are invoked in main 
 - valueOf (explicit conversion from wrapped CLR object to javascript types)
 - Async invocation
 - Compiler API
+- Enum equality
