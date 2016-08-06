@@ -11,6 +11,7 @@
         "package.json",
         "readme.md",
         "lib/clr.js",
+        "src/DllMain.cc",
         "src/node-clr.h",
         "src/node-clr.cc",
         "src/Marshal.h",
