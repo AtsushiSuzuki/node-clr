@@ -91,12 +91,21 @@ Local<Value> CLRBinder::InvokeMethod(
 		match->ToArray(),
 		args);
 
-	auto result = method->Invoke(
-		target,
-		BindingFlags::OptionalParamBinding,
-		nullptr,
-		BindToMethod(method, args),
-		nullptr);
+	System::Object^ result;
+	try
+	{
+		result = method->Invoke(
+			target,
+			BindingFlags::OptionalParamBinding,
+			nullptr,
+			BindToMethod(method, args),
+			nullptr);
+	}
+	catch (System::Reflection::TargetInvocationException^ ex)
+	{
+		throw ex->InnerException;
+	}
+
 	if (result == nullptr &&
 		method->ReturnType == System::Void::typeid)
 	{
