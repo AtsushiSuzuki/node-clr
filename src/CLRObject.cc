@@ -16,7 +16,7 @@ bool CLRObject::IsCLRObject(Local<Value> value)
 {
 	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
 	{
-		auto type = Local<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+		auto type = Nan::GetPrivate(Nan::To<Object>(value).ToLocalChecked(), Nan::New<String>("clr::type").ToLocalChecked());
 		return !type.IsEmpty();
 	}
 	else
@@ -27,14 +27,14 @@ bool CLRObject::IsCLRObject(Local<Value> value)
 
 Local<Value> CLRObject::GetType(Local<Value> value)
 {
-	return Local<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+	return Nan::GetPrivate(Nan::To<Object>(value).ToLocalChecked(), Nan::New<String>("clr::type").ToLocalChecked()).ToLocalChecked();
 }
 
 bool CLRObject::IsCLRConstructor(Local<Value> value)
 {
 	if (!value.IsEmpty() && value->IsFunction())
 	{
-		auto type = value->ToObject()->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+		auto type = Nan::GetPrivate(Nan::To<Object>(value).ToLocalChecked(), Nan::New<String>("clr::type").ToLocalChecked());
 		return !type.IsEmpty();
 	}
 	else
@@ -45,7 +45,7 @@ bool CLRObject::IsCLRConstructor(Local<Value> value)
 
 Local<Value> CLRObject::TypeOf(Local<Value> value)
 {
-	return Local<Object>::Cast(value)->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+	return Nan::GetPrivate(Nan::To<Object>(value).ToLocalChecked(), Nan::New<String>("clr::type").ToLocalChecked()).ToLocalChecked();
 }
 
 Local<Object> CLRObject::Wrap(Local<Object> obj, System::Object^ value)
@@ -57,9 +57,7 @@ Local<Object> CLRObject::Wrap(Local<Object> obj, System::Object^ value)
 		? ToV8String(value->GetType()->AssemblyQualifiedName)
 		: ToV8String(System::Object::typeid->AssemblyQualifiedName);
 
-	obj->SetHiddenValue(
-		Nan::New<String>("clr::type").ToLocalChecked(),
-		name);
+	Nan::SetPrivate(obj, Nan::New<String>("clr::type").ToLocalChecked(), name);
 
 	return obj;
 }
@@ -91,8 +89,8 @@ Local<Function> CLRObject::CreateConstructor(Local<String> typeName, Local<Funct
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 	
 	auto ctor = tpl->GetFunction();
-	ctor->SetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked(), ToV8String(type->AssemblyQualifiedName));
-	ctor->SetHiddenValue(Nan::New<String>("clr::initializer").ToLocalChecked(), initializer);
+	Nan::SetPrivate(ctor, Nan::New<String>("clr::type").ToLocalChecked(), ToV8String(type->AssemblyQualifiedName));
+	Nan::SetPrivate(ctor, Nan::New<String>("clr::initializer").ToLocalChecked(), initializer);
 
 	return ctor;
 }
@@ -107,7 +105,7 @@ NAN_METHOD(CLRObject::New)
 	}
 
 	auto ctor = info.Callee();
-	auto typeName = ctor->GetHiddenValue(Nan::New<String>("clr::type").ToLocalChecked());
+	auto typeName = Nan::GetPrivate(ctor, Nan::New<String>("clr::type").ToLocalChecked()).ToLocalChecked();
 
 	auto arr = Nan::New<Array>();
 	for (int i = 0; i < info.Length(); i++)
@@ -128,7 +126,7 @@ NAN_METHOD(CLRObject::New)
 	
 	Wrap(info.This(), value);
 
-	auto initializer = ctor->GetHiddenValue(Nan::New<String>("clr::initializer").ToLocalChecked());
+	auto initializer = Nan::GetPrivate(ctor, Nan::New<String>("clr::initializer").ToLocalChecked());
 	if (!initializer.IsEmpty())
 	{
 		std::vector<Local<Value> > params;
@@ -136,7 +134,7 @@ NAN_METHOD(CLRObject::New)
 		{
 			params.push_back(info[i]);
 		}
-		Local<Function>::Cast(initializer)->Call(info.This(), info.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
+		Local<Function>::Cast(initializer.ToLocalChecked())->Call(info.This(), info.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
 	}
 }
 
