@@ -89,6 +89,9 @@ System::Object^ ChangeType(
 			match = EXACT;
 			return nullptr;
 		}
+
+		match = INCOMPATIBLE;
+		return nullptr;
 	}
 	
 	// unwarp nullable

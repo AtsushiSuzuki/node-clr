@@ -102,29 +102,42 @@ describe('clr', function () {
     it("varargs with 0 item should work.", function () {
       var ns = clr.init({ global: false });
 
-      var str = ns.System.String.Format("hello");
-      assert.equal(str, "hello");
+      var str = ns.System.String.Join(",");
+      assert.equal(str, "");
     });
 
     it("varargs with 1 item should work.", function () {
       var ns = clr.init({ global: false });
 
-      var str = ns.System.String.Format("hello, {0}", "world");
-      assert.equal(str, "hello, world");
+      var str = ns.System.String.Join(",", "1");
+      assert.equal(str, "1");
     });
 
     it("varargs with 2 item should work.", function () {
       var ns = clr.init({ global: false });
 
-      var str = ns.System.String.Format("hello, {0} and {1}", "world", "asdf");
-      assert.equal(str, "hello, world and asdf");
+      var str = ns.System.String.Join(",", "1", "2");
+      assert.equal(str, "12");
     });
 
     it("varargs with array items should work.", function () {
       var ns = clr.init({ global: false });
 
-      var str = ns.System.String.Format("hello, {0}", ["world"]);
-      assert.equal(str, "hello, world");
+      var str = ns.System.String.Join(",", ["1", "2", "3"]);
+      assert.equal(str, "123");
+    });
+  });
+
+  describe("undefined", function () {
+    it("undefined as parameter should be treated as null.", function () {
+      var ns = clr.init({ global: false });
+
+      try {
+        ns.System.Math.Abs(undefined);
+        assert.fail();
+      } catch (ex) {
+        assert.equal("MissingMethodException", ex.name);
+      }
     });
   });
   
