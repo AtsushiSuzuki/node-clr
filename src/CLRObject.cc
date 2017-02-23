@@ -16,8 +16,7 @@ bool CLRObject::IsCLRObject(Local<Value> value)
 {
 	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
 	{
-		auto type = Nan::GetPrivate(Nan::To<Object>(value).ToLocalChecked(), Nan::New<String>("clr::type").ToLocalChecked());
-		return !type.IsEmpty();
+		return Nan::HasPrivate(value->ToObject(), Nan::New<String>("clr::type").ToLocalChecked()).ToChecked();
 	}
 	else
 	{
