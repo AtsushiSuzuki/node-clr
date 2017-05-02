@@ -1,0 +1,12 @@
+{
+  "name": "clr",
+  "version": "0.1.0",
+  "main": "lib/clr.js",
+  "dependencies": {
+    "bindings": "*",
+    "nan": "*"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  }
+}
