@@ -64,6 +64,50 @@ System::Object^ ChangeType(
 	}
 }
 
+template <typename T>
+static T numeric_cast(double v)
+{
+	if (double::IsNaN(v))
+	{
+		throw gcnew System::InvalidCastException(System::String::Format(
+			"Cannot convert Nan to {0}", T::typeid));
+	}
+	if (double::IsInfinity(v))
+	{
+		throw gcnew System::InvalidCastException(System::String::Format(
+			"Cannot convert Inf to {0}", T::typeid));
+	}
+	if (v < (double)T::MinValue || (double)T::MaxValue < v)
+	{
+		throw gcnew System::OverflowException();
+	}
+	return static_cast<T>(v);
+}
+
+template <>
+static System::Single numeric_cast<System::Single>(double v)
+{
+	using T = System::Single;
+
+	if (double::IsNaN(v))
+	{
+		return T::NaN;
+	}
+	if (double::IsPositiveInfinity(v))
+	{
+		return T::PositiveInfinity;
+	}
+	if (double::IsNegativeInfinity(v))
+	{
+		return T::NegativeInfinity;
+	}
+	if (v < (double)T::MinValue || (double)T::MaxValue < v)
+	{
+		throw gcnew System::OverflowException();
+	}
+	return static_cast<T>(v);
+}
+
 System::Object^ ChangeType(
 	Local<Value> value,
 	System::Type^ type,
@@ -110,95 +154,57 @@ System::Object^ ChangeType(
 			return value->BooleanValue();
 		}
 	}
-	else if (value->IsInt32())
-	{
-		if (type->IsAssignableFrom(System::Int32::typeid) ||
-			type == System::Int64::typeid ||
-			type == System::Single::typeid ||
-			type == System::Double::typeid ||
-			type == System::Decimal::typeid)
-		{
-			match = EXACT;
-			return value->Int32Value();
-		}
-		else if (type == System::SByte::typeid ||
-			type == System::Byte::typeid ||
-			type == System::Int16::typeid ||
-			type == System::UInt16::typeid ||
-			type == System::UInt32::typeid ||
-			type == System::UInt64::typeid ||
-			type == System::Char::typeid)
-		{
-
-			try
-			{
-				match = IMPLICIT_CONVERSION;
-				return System::Convert::ChangeType(value->Int32Value(), type);
-			}
-			catch (System::OverflowException^)
-			{
-				return ChangeType(value->Int32Value(), type, match);
-			}
-		}
-	}
-	else if (value->IsUint32())
-	{
-		if (type->IsAssignableFrom(System::UInt32::typeid) ||
-			type == System::Int64::typeid ||
-			type == System::UInt64::typeid ||
-			type == System::Single::typeid ||
-			type == System::Double::typeid ||
-			type == System::Decimal::typeid)
-		{
-			match = EXACT;
-			return value->Uint32Value();
-		}
-		else if (type == System::SByte::typeid ||
-			type == System::Byte::typeid ||
-			type == System::Int16::typeid ||
-			type == System::UInt16::typeid ||
-			type == System::Int32::typeid ||
-			type == System::Char::typeid)
-		{
-			try
-			{
-				match = IMPLICIT_CONVERSION;
-				return value->Uint32Value();
-			}
-			catch (System::OverflowException^)
-			{
-				return ChangeType(value->Uint32Value(), type, match);
-			}
-		}
-	}
 	else if (value->IsNumber() || value->IsNumberObject())
 	{
-		if (type->IsAssignableFrom(System::Double::typeid))
+		try
 		{
-			match = EXACT;
-			return value->NumberValue();
-		}
-		else if (type == System::SByte::typeid ||
-			type == System::Byte::typeid ||
-			type == System::Int16::typeid ||
-			type == System::UInt16::typeid ||
-			type == System::Int32::typeid ||
-			type == System::UInt32::typeid ||
-			type == System::Int64::typeid ||
-			type == System::UInt64::typeid ||
-			type == System::Char::typeid ||
-			type == System::Single::typeid ||
-			type == System::Decimal::typeid)
-		{
-			try
+			switch (System::Type::GetTypeCode(type))
 			{
+			case System::TypeCode::Char:
 				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::Char>(value->NumberValue());
+			case System::TypeCode::SByte:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::SByte>(value->NumberValue());
+			case System::TypeCode::Byte:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::Byte>(value->NumberValue());
+			case System::TypeCode::Int16:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::Int16>(value->NumberValue());
+			case System::TypeCode::UInt16:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::UInt16>(value->NumberValue());
+			case System::TypeCode::Int32:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::Int32>(value->NumberValue());
+			case System::TypeCode::UInt32:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::UInt32>(value->NumberValue());
+			case System::TypeCode::Int64:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::Int64>(value->NumberValue());
+			case System::TypeCode::UInt64:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::UInt64>(value->NumberValue());
+			case System::TypeCode::Single:
+				match = IMPLICIT_CONVERSION;
+				return numeric_cast<System::Single>(value->NumberValue());
+			case System::TypeCode::Double:
+				match = EXACT;
+				return value->NumberValue();
+			case System::TypeCode::Decimal:
+				match = IMPLICIT_CONVERSION;
+				return static_cast<System::Decimal>(value->NumberValue());
+			default:
+				match = (type->IsAssignableFrom(double::typeid)) ? EXACT : INCOMPATIBLE;
 				return value->NumberValue();
 			}
-			catch (System::OverflowException^)
-			{
-				return ChangeType(value->NumberValue(), type, match);
-			}
+		}
+		catch (System::Exception^)
+		{
+			match = INCOMPATIBLE;
+			return value->NumberValue();
 		}
 	}
 	else if (value->IsString())
