@@ -16,7 +16,8 @@ using namespace System::Text::RegularExpressions;
 
 System::String^ ToCLRString(Local<Value> value)
 {
-	return gcnew System::String((const wchar_t *)(*String::Value(value)));
+	auto &str = Nan::Utf8String(value);
+	return System::Text::Encoding::UTF8->GetString((unsigned char *)(*str), str.length());
 }
 
 Local<String> ToV8String(System::String^ value)
@@ -151,7 +152,7 @@ System::Object^ ChangeType(
 		if (type->IsAssignableFrom(System::Boolean::typeid))
 		{
 			match = EXACT;
-			return value->BooleanValue();
+			return Nan::To<bool>(value).ToChecked();
 		}
 	}
 	else if (value->IsNumber() || value->IsNumberObject())
@@ -162,49 +163,49 @@ System::Object^ ChangeType(
 			{
 			case System::TypeCode::Char:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::Char>(value->NumberValue());
+				return numeric_cast<System::Char>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::SByte:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::SByte>(value->NumberValue());
+				return numeric_cast<System::SByte>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::Byte:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::Byte>(value->NumberValue());
+				return numeric_cast<System::Byte>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::Int16:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::Int16>(value->NumberValue());
+				return numeric_cast<System::Int16>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::UInt16:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::UInt16>(value->NumberValue());
+				return numeric_cast<System::UInt16>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::Int32:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::Int32>(value->NumberValue());
+				return numeric_cast<System::Int32>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::UInt32:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::UInt32>(value->NumberValue());
+				return numeric_cast<System::UInt32>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::Int64:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::Int64>(value->NumberValue());
+				return numeric_cast<System::Int64>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::UInt64:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::UInt64>(value->NumberValue());
+				return numeric_cast<System::UInt64>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::Single:
 				match = IMPLICIT_CONVERSION;
-				return numeric_cast<System::Single>(value->NumberValue());
+				return numeric_cast<System::Single>(Nan::To<double>(value).ToChecked());
 			case System::TypeCode::Double:
 				match = EXACT;
-				return value->NumberValue();
+				return Nan::To<double>(value).ToChecked();
 			case System::TypeCode::Decimal:
 				match = IMPLICIT_CONVERSION;
-				return static_cast<System::Decimal>(value->NumberValue());
+				return static_cast<System::Decimal>(Nan::To<double>(value).ToChecked());
 			default:
 				match = (type->IsAssignableFrom(double::typeid)) ? EXACT : INCOMPATIBLE;
-				return value->NumberValue();
+				return Nan::To<double>(value).ToChecked();
 			}
 		}
 		catch (System::Exception^)
 		{
 			match = INCOMPATIBLE;
-			return value->NumberValue();
+			return Nan::To<double>(value).ToChecked();
 		}
 	}
 	else if (value->IsString())
@@ -296,7 +297,7 @@ System::Object^ ChangeType(
 			int m;
 			to->SetValue(
 				ChangeType(
-					from->Get(i),
+					Nan::Get(from, i).ToLocalChecked(),
 					elementType,
 					m),
 				i);
@@ -330,16 +331,16 @@ System::Object^ ChangeType(
 		auto from = Local<Object>::Cast(value);
 		auto to = (IDictionary<System::String^, System::Object^>^)(gcnew ExpandoObject());
 		
-		auto names = from->GetOwnPropertyNames();
+		auto names = Nan::GetOwnPropertyNames(from).ToLocalChecked();
 		match = EXACT;
 		for (int i = 0; i < (int)names->Length(); i++)
 		{
-			auto name = names->Get(i);
+			Local<Value> name = Nan::Get(from, i).ToLocalChecked();
 
 			int m;
 			to[ToCLRString(name)] =
 				ChangeType(
-					from->Get(name),
+					Nan::Get(from, i).ToLocalChecked(),
 					System::Object::typeid,
 					m);
 
@@ -535,7 +536,8 @@ Local<Value> ToV8Error(System::Exception^ ex)
 	{
 		name = ex->Data["name"]->ToString();
 	}
-	err->Set(
+	Nan::Set(
+		err,
 		Nan::New<String>("name").ToLocalChecked(),
 		ToV8String(name));
 
@@ -556,7 +558,7 @@ Local<Value> ToV8Error(System::Exception^ ex)
 	stack->Append(ex->StackTrace);
 	{
 		IEnumerable<System::String^>^ lines;
-		lines = Regex::Split(ToCLRString(err->Get(Nan::New<String>("stack").ToLocalChecked())), "\r?\n");
+		lines = Regex::Split(ToCLRString(Nan::Get(err, Nan::New<String>("stack").ToLocalChecked()).ToLocalChecked()), "\r?\n");
 		lines = Enumerable::Skip(lines, 1);
 		for each (System::String^ line in lines)
 		{
@@ -564,7 +566,7 @@ Local<Value> ToV8Error(System::Exception^ ex)
 			stack->Append(line);
 		}
 	}
-	err->Set(Nan::New<String>("stack").ToLocalChecked(), ToV8String(stack->ToString()));
+	Nan::Set(err, Nan::New<String>("stack").ToLocalChecked(), ToV8String(stack->ToString()));
 
 	return err;
 }

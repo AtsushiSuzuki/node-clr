@@ -76,7 +76,7 @@ class CLR
 				continue;
 			}
 
-			arr->Set(Nan::New<Number>(index++), ToV8String(assembly->FullName));
+			Nan::Set(arr, Nan::New<Number>(index++), ToV8String(assembly->FullName));
 		}
 
 		info.GetReturnValue().Set(arr);
@@ -119,7 +119,7 @@ class CLR
 					continue;
 				}
 
-				arr->Set(Nan::New<Number>(index++), ToV8String(type->AssemblyQualifiedName));
+				Nan::Set(arr, Nan::New<Number>(index++), ToV8String(type->AssemblyQualifiedName));
 			}
 		}
 
@@ -182,7 +182,7 @@ class CLR
 		}
 
 		auto type = System::Type::GetType(ToCLRString(info[0]), true);
-		auto isStatic = !info[1]->BooleanValue();
+		auto isStatic = !Nan::To<bool>(info[1]).ToChecked();
 		
 		auto obj = Nan::New<Object>();
 		auto members = type->GetMembers(
@@ -193,45 +193,45 @@ class CLR
 			auto ei = dynamic_cast<EventInfo^>(member);
 			if (ei != nullptr &&
 				!ei->IsSpecialName &&
-				!obj->Has(ToV8Symbol(member->Name)))
+				!Nan::Has(obj, ToV8Symbol(member->Name)).ToChecked())
 			{
 				// events
 				auto desc = Nan::New<Object>();
-				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
-				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("event").ToLocalChecked());
-				obj->Set(ToV8Symbol(member->Name), desc);
+				Nan::Set(desc, Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				Nan::Set(desc, Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("event").ToLocalChecked());
+				Nan::Set(obj, ToV8Symbol(member->Name), desc);
 			}
 
 			auto fi = dynamic_cast<FieldInfo^>(member);
 			if (fi != nullptr &&
 				!fi->IsSpecialName &&
-				!obj->Has(ToV8Symbol(member->Name)))
+				!Nan::Has(obj, ToV8Symbol(member->Name)).ToChecked())
 			{
 				// fields
 				auto desc = Nan::New<Object>();
-				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
-				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("field").ToLocalChecked());
+				Nan::Set(desc, Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				Nan::Set(desc, Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("field").ToLocalChecked());
 				auto access = Nan::New<Array>();
 				int index = 0;
-				access->Set(Nan::New<Number>(index++), Nan::New<String>("get").ToLocalChecked());
+				Nan::Set(access, Nan::New<Number>(index++), Nan::New<String>("get").ToLocalChecked());
 				if (!fi->IsInitOnly)
 				{
-					access->Set(Nan::New<Number>(index++), Nan::New<String>("set").ToLocalChecked());
+					Nan::Set(access, Nan::New<Number>(index++), Nan::New<String>("set").ToLocalChecked());
 				}
-				desc->Set(Nan::New<String>("access").ToLocalChecked(), access);
-				obj->Set(ToV8Symbol(member->Name), desc);
+				Nan::Set(desc, Nan::New<String>("access").ToLocalChecked(), access);
+				Nan::Set(obj, ToV8Symbol(member->Name), desc);
 			}
 
 			auto mi = dynamic_cast<MethodInfo^>(member);
 			if (mi != nullptr &&
 				!mi->IsSpecialName &&
-				!obj->Has(ToV8Symbol(member->Name)))
+				!Nan::Has(obj, ToV8Symbol(member->Name)).ToChecked())
 			{
 				// methods
 				auto desc = Nan::New<Object>();
-				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
-				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("method").ToLocalChecked());
-				obj->Set(ToV8Symbol(member->Name), desc);
+				Nan::Set(desc, Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				Nan::Set(desc, Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("method").ToLocalChecked());
+				Nan::Set(obj, ToV8Symbol(member->Name), desc);
 			}
 
 			auto pi = dynamic_cast<PropertyInfo^>(member);
@@ -239,24 +239,24 @@ class CLR
 				!pi->IsSpecialName)
 			{
 				// properties
-				auto desc = (obj->Has(ToV8Symbol(member->Name)))
-					? Local<Object>::Cast(obj->Get(ToV8Symbol(member->Name)))
+				auto desc = (Nan::Has(obj, ToV8Symbol(member->Name)).ToChecked())
+					? Local<Object>::Cast(Nan::Get(obj, ToV8Symbol(member->Name)).ToLocalChecked())
 					: Nan::New<Object>();
-				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
-				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("property").ToLocalChecked());
+				Nan::Set(desc, Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				Nan::Set(desc, Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("property").ToLocalChecked());
 				
-				auto access = (obj->Has(Nan::New<String>("access").ToLocalChecked()))
-					? Local<Array>::Cast(obj->Get(Nan::New<String>("access").ToLocalChecked()))
+				auto access = (Nan::Has(obj, Nan::New<String>("access").ToLocalChecked()).ToChecked())
+					? Local<Array>::Cast(Nan::Get(obj, Nan::New<String>("access").ToLocalChecked()).ToLocalChecked())
 					: Nan::New<Array>();
 				auto canGet = pi->CanRead;
 				auto canSet = pi->CanWrite;
 				for (int i = 0; i < (int)access->Length(); i++)
 				{
-					if (access->Get(Nan::New<Number>(i))->StrictEquals(Nan::New<String>("get").ToLocalChecked()))
+					if (Nan::Get(access, Nan::New<Number>(i)).ToLocalChecked()->StrictEquals(Nan::New<String>("get").ToLocalChecked()))
 					{
 						canGet = true;
 					}
-					if (access->Get(Nan::New<Number>(i))->StrictEquals(Nan::New<String>("set").ToLocalChecked()))
+					if (Nan::Get(access, Nan::New<Number>(i)).ToLocalChecked()->StrictEquals(Nan::New<String>("set").ToLocalChecked()))
 					{
 						canSet = true;
 					}
@@ -264,30 +264,30 @@ class CLR
 				int index = 0;
 				if (canGet)
 				{
-					access->Set(Nan::New<Number>(index++), Nan::New<String>("get").ToLocalChecked());
+					Nan::Set(access, Nan::New<Number>(index++), Nan::New<String>("get").ToLocalChecked());
 				}
 				if (canSet)
 				{
-					access->Set(Nan::New<Number>(index++), Nan::New<String>("set").ToLocalChecked());
+					Nan::Set(access, Nan::New<Number>(index++), Nan::New<String>("set").ToLocalChecked());
 				}
-				desc->Set(Nan::New<String>("access").ToLocalChecked(), access);
+				Nan::Set(desc, Nan::New<String>("access").ToLocalChecked(), access);
 
-				desc->Set(Nan::New<String>("indexed").ToLocalChecked(), Nan::New<Boolean>(0 < pi->GetIndexParameters()->Length));
+				Nan::Set(desc, Nan::New<String>("indexed").ToLocalChecked(), Nan::New<Boolean>(0 < pi->GetIndexParameters()->Length));
 				
-				obj->Set(ToV8Symbol(member->Name), desc);
+				Nan::Set(obj, ToV8Symbol(member->Name), desc);
 			}
 
 			auto ti = dynamic_cast<System::Type^>(member);
 			if (ti != nullptr &&
 				!ti->IsSpecialName &&
-				!obj->Has(ToV8Symbol(member->Name)))
+				!Nan::Has(obj, ToV8Symbol(member->Name)).ToChecked())
 			{
 				// nested typess
 				auto desc = Nan::New<Object>();
-				desc->Set(Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
-				desc->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("nestedType").ToLocalChecked());
-				desc->Set(Nan::New<String>("fullName").ToLocalChecked(), ToV8String(ti->AssemblyQualifiedName));
-				obj->Set(ToV8Symbol(member->Name), desc);
+				Nan::Set(desc, Nan::New<String>("name").ToLocalChecked(), ToV8String(member->Name));
+				Nan::Set(desc, Nan::New<String>("type").ToLocalChecked(), Nan::New<String>("nestedType").ToLocalChecked());
+				Nan::Set(desc, Nan::New<String>("fullName").ToLocalChecked(), ToV8String(ti->AssemblyQualifiedName));
+				Nan::Set(obj, ToV8Symbol(member->Name), desc);
 			}
 		}
 
@@ -309,7 +309,7 @@ class CLR
 		if (info.Length() != 4 ||
 			!info[0]->IsString() ||
 			!info[1]->IsString() ||
-			(!CLRObject::IsCLRObject(info[2]) && info[2]->BooleanValue() != false) ||
+			(!CLRObject::IsCLRObject(info[2]) && Nan::To<bool>(info[2]).ToChecked() != false) ||
 			!info[3]->IsArray())
 		{
 			Nan::ThrowTypeError("Arguments does not match it's parameter list");
@@ -348,7 +348,7 @@ class CLR
 		if (info.Length() != 3 ||
 			!info[0]->IsString() ||
 			!info[1]->IsString() ||
-			(!CLRObject::IsCLRObject(info[2]) && info[2]->BooleanValue() != false))
+			(!CLRObject::IsCLRObject(info[2]) && Nan::To<bool>(info[2]).ToChecked() != false))
 		{
 			Nan::ThrowTypeError("Arguments does not match it's parameter list");
 			return;
@@ -385,7 +385,7 @@ class CLR
 		if (info.Length() != 4 ||
 			!info[0]->IsString() ||
 			!info[1]->IsString() ||
-			(!CLRObject::IsCLRObject(info[2]) && info[2]->BooleanValue() != false) ||
+			(!CLRObject::IsCLRObject(info[2]) && Nan::To<bool>(info[2]).ToChecked() != false) ||
 			!info[3].IsEmpty())
 		{
 			Nan::ThrowTypeError("Arguments does not match it's parameter list");
@@ -486,18 +486,18 @@ public:
 	{
 		CLRObject::Init();
 
-		exports->Set(Nan::New<String>("import").ToLocalChecked(), Nan::New<FunctionTemplate>(Import)->GetFunction());
-		exports->Set(Nan::New<String>("getAssemblies").ToLocalChecked(), Nan::New<FunctionTemplate>(GetAssemblies)->GetFunction());
-		exports->Set(Nan::New<String>("getTypes").ToLocalChecked(), Nan::New<FunctionTemplate>(GetTypes)->GetFunction());
-		exports->Set(Nan::New<String>("createConstructor").ToLocalChecked(), Nan::New<FunctionTemplate>(CreateConstructor)->GetFunction());
-		exports->Set(Nan::New<String>("getMembers").ToLocalChecked(), Nan::New<FunctionTemplate>(GetMembers)->GetFunction());
-		exports->Set(Nan::New<String>("invokeMethod").ToLocalChecked(), Nan::New<FunctionTemplate>(InvokeMethod)->GetFunction());
-		exports->Set(Nan::New<String>("getField").ToLocalChecked(), Nan::New<FunctionTemplate>(GetField)->GetFunction());
-		exports->Set(Nan::New<String>("setField").ToLocalChecked(), Nan::New<FunctionTemplate>(SetField)->GetFunction());
-		exports->Set(Nan::New<String>("isCLRObject").ToLocalChecked(), Nan::New<FunctionTemplate>(IsCLRObject)->GetFunction());
-		exports->Set(Nan::New<String>("getType").ToLocalChecked(), Nan::New<FunctionTemplate>(GetType)->GetFunction());
-		exports->Set(Nan::New<String>("isCLRConstructor").ToLocalChecked(), Nan::New<FunctionTemplate>(IsCLRConstructor)->GetFunction());
-		exports->Set(Nan::New<String>("typeOf").ToLocalChecked(), Nan::New<FunctionTemplate>(TypeOf)->GetFunction());
+		Nan::Set(exports, Nan::New<String>("import").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(Import)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("getAssemblies").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(GetAssemblies)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("getTypes").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(GetTypes)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("createConstructor").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(CreateConstructor)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("getMembers").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(GetMembers)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("invokeMethod").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(InvokeMethod)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("getField").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(GetField)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("setField").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(SetField)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("isCLRObject").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(IsCLRObject)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("getType").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(GetType)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("isCLRConstructor").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(IsCLRConstructor)).ToLocalChecked());
+		Nan::Set(exports, Nan::New<String>("typeOf").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(TypeOf)).ToLocalChecked());
 
 		System::AppDomain::CurrentDomain->AssemblyResolve += gcnew System::ResolveEventHandler(
 			&CLR::ResolveAssembly);

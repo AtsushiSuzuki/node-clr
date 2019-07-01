@@ -16,7 +16,7 @@ bool CLRObject::IsCLRObject(Local<Value> value)
 {
 	if (!value.IsEmpty() && value->IsObject() && !value->IsFunction())
 	{
-		return Nan::HasPrivate(value->ToObject(), Nan::New<String>("clr::type").ToLocalChecked()).ToChecked();
+		return Nan::HasPrivate(Nan::To<Object>(value).ToLocalChecked(), Nan::New<String>("clr::type").ToLocalChecked()).ToChecked();
 	}
 	else
 	{
@@ -64,8 +64,8 @@ Local<Object> CLRObject::Wrap(Local<Object> obj, System::Object^ value)
 Local<Object> CLRObject::Wrap(System::Object^ value)
 {
 	auto tmpl = Nan::New<ObjectTemplate>(objectTemplate_);
-	auto obj = tmpl->NewInstance();
-	return Wrap(obj, value);
+	auto obj = Nan::NewInstance(tmpl);
+	return Wrap(obj.ToLocalChecked(), value);
 }
 
 System::Object^ CLRObject::Unwrap(Local<Value> obj)
@@ -75,7 +75,7 @@ System::Object^ CLRObject::Unwrap(Local<Value> obj)
 		throw gcnew System::ArgumentException("argument \"obj\" is not CLR-wrapped object");
 	}
 
-	auto wrapper = node::ObjectWrap::Unwrap<CLRObject>(obj->ToObject());
+	auto wrapper = node::ObjectWrap::Unwrap<CLRObject>(Nan::To<Object>(obj).ToLocalChecked());
 	return wrapper->value_;
 }
 
@@ -87,7 +87,7 @@ Local<Function> CLRObject::CreateConstructor(Local<String> typeName, Local<Funct
 	tpl->SetClassName(ToV8String(type->Name));
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 	
-	auto ctor = tpl->GetFunction();
+	auto ctor = Nan::GetFunction(tpl).ToLocalChecked();
 	Nan::SetPrivate(ctor, Nan::New<String>("clr::type").ToLocalChecked(), ToV8String(type->AssemblyQualifiedName));
 	Nan::SetPrivate(ctor, Nan::New<String>("clr::initializer").ToLocalChecked(), initializer);
 
@@ -103,13 +103,13 @@ NAN_METHOD(CLRObject::New)
 		return Nan::ThrowError("Illegal invocation");
 	}
 
-	auto ctor = info.Callee();
+	Local<Function> ctor = info.Callee();
 	auto typeName = Nan::GetPrivate(ctor, Nan::New<String>("clr::type").ToLocalChecked()).ToLocalChecked();
 
 	auto arr = Nan::New<Array>();
 	for (int i = 0; i < info.Length(); i++)
 	{
-		arr->Set(Nan::New<Number>(i), info[i]);
+		Nan::Set(arr, Nan::New<Number>(i), info[i]);
 	}
 	
 	System::Object^ value;
@@ -133,7 +133,7 @@ NAN_METHOD(CLRObject::New)
 		{
 			params.push_back(info[i]);
 		}
-		Local<Function>::Cast(initializer.ToLocalChecked())->Call(info.This(), info.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
+		Nan::Call(Nan::To<Function>(initializer.ToLocalChecked()).ToLocalChecked(), info.This(), info.Length(), (0 < params.size()) ? &(params[0]) : nullptr);
 	}
 }
 

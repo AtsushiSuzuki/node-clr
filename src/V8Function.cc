@@ -57,7 +57,7 @@ System::Object^ V8Function::InvokeImpl(array<System::Object^>^ args)
 		params.push_back(ToV8Value(arg));
 	}
 
-	TryCatch trycatch;
+	Nan::TryCatch trycatch;
 	auto result = Nan::MakeCallback(
 		Nan::GetCurrentContext()->Global(),
 		Nan::New(this->function),

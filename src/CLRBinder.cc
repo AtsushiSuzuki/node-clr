@@ -301,9 +301,9 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 			i == (int)args->Length() - 1)
 		{
 			int score1;
-			auto arg1 = ChangeType(args->Get(Nan::New<Number>(i)), params[i]->ParameterType, score1);
+			auto arg1 = ChangeType(Nan::Get(args, Nan::New<Number>(i)).ToLocalChecked(), params[i]->ParameterType, score1);
 			int score2;
-			auto arg2 = ChangeType(args->Get(Nan::New<Number>(i)), varArgsType, score2);
+			auto arg2 = ChangeType(Nan::Get(args, Nan::New<Number>(i)).ToLocalChecked(), varArgsType, score2);
 
 			if (score1 >= score2)
 			{
@@ -321,14 +321,14 @@ array<System::Object^>^ CLRBinder::BindToMethod(
 		else if (i < params->Length)
 		{
 			int s;
-			arguments[i] = ChangeType(args->Get(Nan::New<Number>(i)), params[i]->ParameterType, s);
+			arguments[i] = ChangeType(Nan::Get(args, Nan::New<Number>(i)).ToLocalChecked(), params[i]->ParameterType, s);
 
 			match = System::Math::Min(match, s);
 		}
 		else
 		{
 			int s;
-			auto arg =  ChangeType(args->Get(Nan::New<Number>(i)), varArgsType, s);
+			auto arg =  ChangeType(Nan::Get(args, Nan::New<Number>(i)).ToLocalChecked(), varArgsType, s);
 
 			System::Array^ arr;
 			if (arguments[arguments->Length - 1] == nullptr)
