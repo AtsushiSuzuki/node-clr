@@ -83,7 +83,11 @@ Local<Function> CLRObject::CreateConstructor(Local<String> typeName, Local<Funct
 {
 	auto type = System::Type::GetType(ToCLRString(typeName), true);
 
-	auto tpl = Nan::New<FunctionTemplate>(New);
+	auto data = Nan::New<Object>();
+	Nan::Set(data, Nan::New<String>("clr::type").ToLocalChecked(), ToV8String(type->AssemblyQualifiedName));
+	Nan::Set(data, Nan::New<String>("clr::initializer").ToLocalChecked(), initializer);
+
+	auto tpl = Nan::New<FunctionTemplate>(New, data);
 	tpl->SetClassName(ToV8String(type->Name));
 	tpl->InstanceTemplate()->SetInternalFieldCount(1);
 	
@@ -103,8 +107,8 @@ NAN_METHOD(CLRObject::New)
 		return Nan::ThrowError("Illegal invocation");
 	}
 
-	Local<Function> ctor = info.Callee();
-	auto typeName = Nan::GetPrivate(ctor, Nan::New<String>("clr::type").ToLocalChecked()).ToLocalChecked();
+	Local<Object> data = info.Data().As<Object>();
+	auto typeName = Nan::Get(data, Nan::New<String>("clr::type").ToLocalChecked()).ToLocalChecked();
 
 	auto arr = Nan::New<Array>();
 	for (int i = 0; i < info.Length(); i++)
@@ -125,7 +129,7 @@ NAN_METHOD(CLRObject::New)
 	
 	Wrap(info.This(), value);
 
-	auto initializer = Nan::GetPrivate(ctor, Nan::New<String>("clr::initializer").ToLocalChecked());
+	auto initializer = Nan::Get(data, Nan::New<String>("clr::initializer").ToLocalChecked());
 	if (!initializer.IsEmpty())
 	{
 		std::vector<Local<Value> > params;
