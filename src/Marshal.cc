@@ -521,9 +521,11 @@ System::Exception^ ToCLRException(Local<Value> ex)
 	{
 		auto obj = Local<Object>::Cast(ex);
 		return gcnew V8InvocationException(
-			ToCLRString(obj->Get(Nan::New<String>("name").ToLocalChecked())),
-			ToCLRString(obj->Get(Nan::New<String>("message").ToLocalChecked())),
-			ToCLRString(obj->Get(Nan::New<String>("stack").ToLocalChecked())));
+			ToCLRString(Nan::Get(obj, Nan::New<String>("name").ToLocalChecked()).ToLocalChecked()),
+			
+			ToCLRString(Nan::Get(obj, Nan::New<String>("message").ToLocalChecked()).ToLocalChecked()),
+			
+			ToCLRString(Nan::Get(obj, Nan::New<String>("stack").ToLocalChecked()).ToLocalChecked()));
 	}
 }
 
